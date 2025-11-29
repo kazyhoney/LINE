@@ -7,12 +7,7 @@
     <title>LINEスタンプ一括生成ツール (AI版)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <!-- AIライブラリ読み込み -->
-    <script type="module">
-        import removeBackground from 'https://esm.sh/@imgly/background-removal@1.4.5';
-        window.removeBackground = removeBackground;
-        console.log('AI library loaded successfully');
-    </script>
+
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -64,7 +59,7 @@
                     <path
                         d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 14a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm0-4a1 1 0 0 1-1-1V7a1 1 0 0 1 2 0v4a1 1 0 0 1-1 1z" />
                 </svg>
-                LINEスタンプ生成 (AI背景透過搭載)
+                LINEスタンプ生成
             </h1>
             <a href="https://creator.line.me/ja/guideline/sticker/" target="_blank"
                 class="text-xs bg-white text-green-600 px-3 py-1 rounded-full hover:bg-green-100 transition">制作ガイドライン</a>
@@ -73,13 +68,7 @@
 
     <main class="container mx-auto p-4 flex-grow max-w-5xl">
 
-        <div class="bg-white rounded-lg shadow p-6 mb-6">
-            <h2 class="text-lg font-bold mb-2 text-green-700">AI高精度切り抜き対応</h2>
-            <p class="text-sm text-gray-600 mb-2">
-                Pythonの<code>rembg</code>と同様のAIモデルをブラウザで実行します。<br>
-                <span class="text-red-500 font-bold">※初回のみAIモデルのダウンロード（約100MB）が行われるため、処理開始まで数十秒かかります。2回目以降は高速です。</span>
-            </p>
-        </div>
+
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
@@ -137,14 +126,6 @@
                 <div class="bg-white p-6 rounded-lg shadow space-y-4">
                     <label class="block text-sm font-bold text-gray-700">3. 背景透過設定</label>
 
-                    <!-- モード切替タブ -->
-                    <div class="flex border-b border-gray-200 mb-4">
-                        <button id="tabColor"
-                            class="flex-1 py-2 text-sm font-bold text-green-600 border-b-2 border-green-600">イラスト(色指定)</button>
-                        <button id="tabAI"
-                            class="flex-1 py-2 text-sm font-medium text-gray-500 hover:text-gray-700">写真(AI)</button>
-                    </div>
-
                     <!-- 色指定モード設定 -->
                     <div id="panelColor" class="space-y-3">
                         <div class="flex items-center gap-2">
@@ -167,7 +148,7 @@
                         </div>
 
                         <div class="bg-yellow-50 p-3 rounded border border-yellow-200 text-xs text-yellow-800 mt-2">
-                            <span class="font-bold">💡 ヒント:</span> プレビュー画像をクリックすると、その部分の色を透明にできます（文字の中などに便利）。
+                            <span class="font-bold">💡 ヒント:</span> プレビュー画像をクリックすると、その部分の色を透明にできます(文字の中などに便利)。
                         </div>
 
                         <div class="flex justify-end">
@@ -182,21 +163,6 @@
                                 元に戻す
                             </button>
                         </div>
-                    </div>
-
-                    <!-- AIモード設定 -->
-                    <div id="panelAI" class="hidden space-y-3">
-                        <div class="flex items-center gap-2">
-                            <input type="checkbox" id="useAI"
-                                class="w-5 h-5 text-green-600 rounded focus:ring-green-500 cursor-pointer">
-                            <label for="useAI" class="text-sm font-bold text-gray-800 cursor-pointer select-none">
-                                AI背景除去を実行
-                            </label>
-                        </div>
-                        <p class="text-xs text-gray-500 ml-7">
-                            人物や文字を認識して切り抜きます。写真向きです。<br>
-                            ※初回はモデルDLに時間がかかります。
-                        </p>
                     </div>
 
                     <hr class="border-gray-100">
@@ -226,7 +192,7 @@
                 <div class="bg-white p-4 rounded-lg shadow h-full flex flex-col">
                     <h3 class="text-sm font-bold text-gray-700 mb-2 flex justify-between items-center">
                         プレビュー & 透過編集
-                        <span class="text-xs font-normal text-gray-500">クリックで透過 / ドラッグで移動</span>
+                        <span class="text-xs font-normal text-gray-500">チェックボックスで画像を選択 / クリックで透過</span>
                     </h3>
                     <div class="flex-grow canvas-container relative border rounded bg-gray-50 overflow-hidden flex items-center justify-center min-h-[400px]"
                         id="previewContainer">
@@ -260,22 +226,17 @@
         const autoCenterCheckbox = document.getElementById('autoCenter');
         const dlTemplateBtn = document.getElementById('dlTemplateBtn');
 
-        // New Elements for Color Removal
+        // Elements for Color Removal
         const editorCanvas = document.getElementById('editorCanvas');
-        const tabColor = document.getElementById('tabColor');
-        const tabAI = document.getElementById('tabAI');
-        const panelColor = document.getElementById('panelColor');
-        const panelAI = document.getElementById('panelAI');
         const autoRemoveBgCheckbox = document.getElementById('autoRemoveBg');
         const toleranceRange = document.getElementById('toleranceRange');
         const toleranceVal = document.getElementById('toleranceVal');
         const undoBtn = document.getElementById('undoBtn');
-        const useAICheckbox = document.getElementById('useAI');
 
         let originalImage = null;
-        let currentMode = 'color'; // 'color' or 'ai'
         let history = []; // Undo history
         let ctx = null; // Editor canvas context
+        let cellCheckStates = []; // Checkbox states for each grid cell
 
         // Constants
         const SPECS = {
@@ -292,9 +253,7 @@
         if (generateBtn) generateBtn.addEventListener('click', generateZip);
         if (dlTemplateBtn) dlTemplateBtn.addEventListener('click', downloadTemplate);
 
-        // Tab Switching
-        tabColor.addEventListener('click', () => switchMode('color'));
-        tabAI.addEventListener('click', () => switchMode('ai'));
+
 
         // Color Removal Controls
         toleranceRange.addEventListener('input', (e) => toleranceVal.innerText = e.target.value);
@@ -326,26 +285,7 @@
             });
         }
 
-        function switchMode(mode) {
-            currentMode = mode;
-            if (mode === 'color') {
-                tabColor.className = "flex-1 py-2 text-sm font-bold text-green-600 border-b-2 border-green-600";
-                tabAI.className = "flex-1 py-2 text-sm font-medium text-gray-500 hover:text-gray-700";
-                panelColor.classList.remove('hidden');
-                panelAI.classList.add('hidden');
-                editorCanvas.style.cursor = 'crosshair';
-            } else {
-                tabColor.className = "flex-1 py-2 text-sm font-medium text-gray-500 hover:text-gray-700";
-                tabAI.className = "flex-1 py-2 text-sm font-bold text-green-600 border-b-2 border-green-600";
-                panelColor.classList.add('hidden');
-                panelAI.classList.remove('hidden');
-                editorCanvas.style.cursor = 'default';
-                // Restore original image for AI mode preview
-                if (originalImage) {
-                    resetCanvas();
-                }
-            }
-        }
+
 
         function handleFileSelect(event) {
             const file = event.target.files[0];
@@ -366,7 +306,7 @@
                     previewContainer.querySelector('p')?.remove();
 
                     // Initial Auto Removal
-                    if (currentMode === 'color' && autoRemoveBgCheckbox.checked) {
+                    if (autoRemoveBgCheckbox.checked) {
                         applyAutoRemoval();
                     }
 
@@ -531,12 +471,47 @@
             gridOverlay.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
 
             const total = cols * rows;
+
+            // Initialize checkbox states if needed
+            if (cellCheckStates.length !== total) {
+                cellCheckStates = new Array(total).fill(true);
+            }
+
             for (let i = 0; i < total; i++) {
                 const cell = document.createElement('div');
-                cell.className = 'border border-red-500/50 flex items-center justify-center text-red-600 font-bold text-xs bg-red-100/10 hover:bg-red-100/30 transition pointer-events-none';
-                cell.innerText = i + 1;
+                cell.className = 'border border-red-500/50 flex items-start justify-between p-2 text-red-600 font-bold text-xs bg-red-100/10 hover:bg-red-100/30 transition relative';
+
+                // Checkbox container
+                const checkboxContainer = document.createElement('div');
+                checkboxContainer.className = 'flex items-center gap-1 bg-white/90 rounded px-2 py-1 shadow-sm pointer-events-auto cursor-pointer';
+                checkboxContainer.onclick = (e) => {
+                    e.stopPropagation();
+                    toggleCellCheck(i);
+                };
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.checked = cellCheckStates[i];
+                checkbox.className = 'w-5 h-5 text-green-600 rounded focus:ring-green-500 cursor-pointer pointer-events-none';
+                checkbox.id = `cell-check-${i}`;
+
+                const label = document.createElement('label');
+                label.htmlFor = `cell-check-${i}`;
+                label.innerText = i + 1;
+                label.className = 'cursor-pointer select-none pointer-events-none';
+
+                checkboxContainer.appendChild(checkbox);
+                checkboxContainer.appendChild(label);
+                cell.appendChild(checkboxContainer);
+
                 gridOverlay.appendChild(cell);
             }
+        }
+
+        function toggleCellCheck(index) {
+            cellCheckStates[index] = !cellCheckStates[index];
+            updateGridUI(); // Refresh UI
+            updateSelectOptions(); // Update main image select options
         }
 
         function updateSelectOptions() {
@@ -545,13 +520,21 @@
             const total = cols * rows;
             const currentSelection = mainImageIndex.value;
             mainImageIndex.innerHTML = '';
+
             for (let i = 0; i < total; i++) {
-                const option = document.createElement('option');
-                option.value = i;
-                option.text = `${i + 1}番目の画像`;
-                mainImageIndex.appendChild(option);
+                // Only add checked cells
+                if (cellCheckStates[i]) {
+                    const option = document.createElement('option');
+                    option.value = i;
+                    option.text = `${i + 1}番目の画像`;
+                    mainImageIndex.appendChild(option);
+                }
             }
-            if (currentSelection < total) mainImageIndex.value = currentSelection;
+
+            // Try to maintain current selection if still checked
+            if (currentSelection < total && cellCheckStates[currentSelection]) {
+                mainImageIndex.value = currentSelection;
+            }
         }
 
         // --- Logic ---
@@ -590,37 +573,10 @@
             try {
                 let processImage;
 
-                // Determine source image based on mode
-                if (currentMode === 'color') {
-                    // Use the edited canvas as source
-                    processImage = new Image();
-                    processImage.src = editorCanvas.toDataURL();
-                    await new Promise(r => processImage.onload = r);
-                } else {
-                    // AI Mode
-                    processImage = originalImage;
-                    if (useAICheckbox.checked) {
-                        try {
-                            statusMsg.innerText = "AIが背景を除去中... (初回は時間がかかります)";
-                            if (typeof window.removeBackground !== 'function') throw new Error("AIライブラリ未ロード");
-
-                            const response = await fetch(originalImage.src);
-                            const blob = await response.blob();
-                            const noBgBlob = await window.removeBackground(blob);
-                            const noBgUrl = URL.createObjectURL(noBgBlob);
-
-                            processImage = new Image();
-                            await new Promise(resolve => {
-                                processImage.onload = resolve;
-                                processImage.src = noBgUrl;
-                            });
-                        } catch (aiError) {
-                            console.warn("AI Error:", aiError);
-                            statusMsg.innerText = "AIエラー。通常処理で続行します。";
-                            await new Promise(r => setTimeout(r, 1000));
-                        }
-                    }
-                }
+                // Use the edited canvas as source
+                processImage = new Image();
+                processImage.src = editorCanvas.toDataURL();
+                await new Promise(r => processImage.onload = r);
 
                 statusMsg.innerText = "スタンプ画像を分割・生成中...";
                 await new Promise(r => setTimeout(r, 100));
@@ -634,7 +590,12 @@
                 const selectedMainIndex = parseInt(mainImageIndex.value);
                 const shouldAutoCenter = autoCenterCheckbox.checked;
 
+                let outputIndex = 1; // Counter for output file names
+
                 for (let i = 0; i < totalCells; i++) {
+                    // Skip unchecked cells
+                    if (!cellCheckStates[i]) continue;
+
                     const c = i % cols;
                     const r = Math.floor(i / cols);
 
@@ -670,7 +631,7 @@
                     stickerCanvas.width = SPECS.sticker.w;
                     stickerCanvas.height = SPECS.sticker.h;
                     drawCentered(stickerCanvas, SPECS.sticker.w, SPECS.sticker.h, SPECS.sticker.margin);
-                    const fileName = `${(i + 1).toString().padStart(2, '0')}.png`;
+                    const fileName = `${outputIndex.toString().padStart(2, '0')}.png`;
                     zip.file(fileName, await new Promise(r => stickerCanvas.toBlob(r)));
 
                     // Main/Tab
@@ -687,6 +648,8 @@
                         drawCentered(tabCanvas, SPECS.tab.w, SPECS.tab.h, 0);
                         zip.file("tab.png", await new Promise(r => tabCanvas.toBlob(r)));
                     }
+
+                    outputIndex++; // Increment for next checked image
                 }
 
                 const content = await zip.generateAsync({ type: "blob" });
