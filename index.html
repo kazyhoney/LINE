@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LINEスタンプ一括生成ツール (AI版)</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdn.tailwindcss.com" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" crossorigin="anonymous"></script>
     <!-- AIライブラリ読み込み -->
     <script type="module">
         import removeBackground from 'https://esm.sh/@imgly/background-removal@1.4.5';
@@ -59,7 +59,8 @@
         <div class="container mx-auto flex justify-between items-center">
             <h1 class="text-xl font-bold flex items-center gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    style="width: 24px; height: 24px;">
                     <path
                         d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 14a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm0-4a1 1 0 0 1-1-1V7a1 1 0 0 1 2 0v4a1 1 0 0 1-1 1z" />
                 </svg>
@@ -93,7 +94,7 @@
                             class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
                         <div class="space-y-2 pointer-events-none">
                             <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none"
-                                viewBox="0 0 48 48">
+                                viewBox="0 0 48 48" style="width: 48px; height: 48px;">
                                 <path
                                     d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
                                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
