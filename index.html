@@ -7,9 +7,12 @@
     <title>LINEスタンプ一括生成ツール (AI版)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <!-- AIライブラリ読み込み (エラー耐性強化版) -->
-    <script src="https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.3.0/dist/imgly-background-removal.min.js"
-        crossorigin="anonymous"></script>
+    <!-- AIライブラリ読み込み -->
+    <script type="module">
+        import removeBackground from 'https://esm.sh/@imgly/background-removal@1.4.5';
+        window.removeBackground = removeBackground;
+        console.log('AI library loaded successfully');
+    </script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -73,7 +76,7 @@
             <h2 class="text-lg font-bold mb-2 text-green-700">AI高精度切り抜き対応</h2>
             <p class="text-sm text-gray-600 mb-2">
                 Pythonの<code>rembg</code>と同様のAIモデルをブラウザで実行します。<br>
-                <span class="text-red-500 font-bold">※初回のみAIモデルのダウンロード（約100MB）が行われるため、処理開始まで数十秒かかります。2回目以降は高速です。</span>
+                <span class="text-red-500 font-bold">※AIモデルのダウンロード（約100MB）が行われるため、処理開始まで数十秒かかります。</span>
             </p>
         </div>
 
@@ -341,20 +344,14 @@
             try {
                 let processImage = originalImage;
 
+
                 // 1. AI Background Removal (if checked)
                 if (useAICheckbox.checked) {
                     try {
                         statusMsg.innerText = "AIが背景を除去中... (初回は時間がかかります)";
 
-                        // Check availability
-                        let removeBgFn = null;
-                        if (typeof imglyRemoveBackground === 'function') {
-                            removeBgFn = imglyRemoveBackground;
-                        } else if (typeof imgly !== 'undefined' && typeof imgly.removeBackground === 'function') {
-                            removeBgFn = imgly.removeBackground;
-                        }
-
-                        if (!removeBgFn) {
+                        // Check if removeBackground is available
+                        if (typeof window.removeBackground !== 'function') {
                             throw new Error("AIライブラリが読み込まれていません。");
                         }
 
@@ -362,12 +359,8 @@
                         const response = await fetch(originalImage.src);
                         const blob = await response.blob();
 
-                        // Run imgly with CDN config for models
-                        const config = {
-                            publicPath: "https://cdn.jsdelivr.net/npm/@imgly/background-removal-data@1.3.0/dist/"
-                        };
-
-                        const noBgBlob = await removeBgFn(blob, config);
+                        // Run removeBackground
+                        const noBgBlob = await window.removeBackground(blob);
                         const noBgUrl = URL.createObjectURL(noBgBlob);
 
                         // Create new Image object from result
@@ -456,7 +449,9 @@
                 const link = document.createElement('a');
                 link.href = URL.createObjectURL(content);
                 link.download = "line_stickers_ai.zip";
+                document.body.appendChild(link); // 必須: Firefox/Safari等でファイル名を有効にするため
                 link.click();
+                document.body.removeChild(link);
 
                 statusMsg.innerText = "完了しました！";
                 setTimeout(() => {
