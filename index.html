@@ -76,7 +76,7 @@
             <h2 class="text-lg font-bold mb-2 text-green-700">AI高精度切り抜き対応</h2>
             <p class="text-sm text-gray-600 mb-2">
                 Pythonの<code>rembg</code>と同様のAIモデルをブラウザで実行します。<br>
-                <span class="text-red-500 font-bold">※AIモデルのダウンロード（約100MB）が行われるため、処理開始まで数十秒かかります。</span>
+                <span class="text-red-500 font-bold">※初回のみAIモデルのダウンロード（約100MB）が行われるため、処理開始まで数十秒かかります。2回目以降は高速です。</span>
             </p>
         </div>
 
@@ -161,7 +161,7 @@
                     class="w-full bg-green-600 text-white font-bold py-3 px-4 rounded shadow-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition flex justify-center items-center gap-2">
                     <span id="btnText">変換＆ZIP作成</span>
                 </button>
-                <div id="statusContainer" class="hidden text-center">
+                <div id="statusContainer" class="hidden text-center" style="display: none;">
                     <div class="loader mb-2"></div>
                     <div id="statusMsg" class="text-sm font-semibold text-green-700">AIモデル読込中...</div>
                 </div>
@@ -338,12 +338,12 @@
             generateBtn.disabled = true;
             generateBtn.classList.add('hidden');
             statusContainer.classList.remove('hidden');
+            statusContainer.style.display = 'block'; // Ensure it's visible
             statusMsg.innerText = "処理を開始します...";
             statusMsg.className = "text-sm font-semibold text-green-700";
 
             try {
                 let processImage = originalImage;
-
 
                 // 1. AI Background Removal (if checked)
                 if (useAICheckbox.checked) {
@@ -449,13 +449,14 @@
                 const link = document.createElement('a');
                 link.href = URL.createObjectURL(content);
                 link.download = "line_stickers_ai.zip";
-                document.body.appendChild(link); // 必須: Firefox/Safari等でファイル名を有効にするため
+                document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
 
                 statusMsg.innerText = "完了しました！";
                 setTimeout(() => {
                     statusContainer.classList.add('hidden');
+                    statusContainer.style.display = 'none';
                     generateBtn.classList.remove('hidden');
                     generateBtn.disabled = false;
                 }, 2000);
