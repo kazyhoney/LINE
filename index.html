@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LINEスタンプ一括生成ツール (AI版)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <!-- AIライブラリ読み込み (エラー耐性強化版) -->
+    <script src="https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.3.0/dist/imgly-background-removal.min.js"
+        crossorigin="anonymous"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: #f0fdf4;
+        }
+
+        .canvas-container {
+            background-image:
+                linear-gradient(45deg, #e5e7eb 25%, transparent 25%),
+                linear-gradient(-45deg, #e5e7eb 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #e5e7eb 75%),
+                linear-gradient(-45deg, transparent 75%, #e5e7eb 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        }
+
+        /* Loading Animation */
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #16a34a;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body class="text-gray-800 min-h-screen flex flex-col">
+
+    <header class="bg-green-600 text-white p-4 shadow-md">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-bold flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path
+                        d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 14a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm0-4a1 1 0 0 1-1-1V7a1 1 0 0 1 2 0v4a1 1 0 0 1-1 1z" />
+                </svg>
+                LINEスタンプ生成 (AI背景透過搭載)
+            </h1>
+            <a href="https://creator.line.me/ja/guideline/sticker/" target="_blank"
+                class="text-xs bg-white text-green-600 px-3 py-1 rounded-full hover:bg-green-100 transition">制作ガイドライン</a>
+        </div>
+    </header>
+
+    <main class="container mx-auto p-4 flex-grow max-w-5xl">
+
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 class="text-lg font-bold mb-2 text-green-700">AI高精度切り抜き対応</h2>
+            <p class="text-sm text-gray-600 mb-2">
+                Pythonの<code>rembg</code>と同様のAIモデルをブラウザで実行します。<br>
+                <span class="text-red-500 font-bold">※初回のみAIモデルのダウンロード（約100MB）が行われるため、処理開始まで数十秒かかります。2回目以降は高速です。</span>
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            <div class="lg:col-span-1 space-y-6">
+
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <label class="block text-sm font-bold mb-2 text-gray-700">1. 画像を選択</label>
+                    <div class="relative border-2 border-dashed border-gray-300 rounded-lg p-6 hover:bg-gray-50 transition text-center cursor-pointer"
+                        id="dropZone">
+                        <!-- z-10 added to ensure clickability -->
+                        <input type="file" id="imageInput" accept="image/png, image/jpeg"
+                            class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                        <div class="space-y-2 pointer-events-none">
+                            <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none"
+                                viewBox="0 0 48 48">
+                                <path
+                                    d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                            <p class="text-sm text-gray-600">クリックまたはD&D</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <div class="flex justify-between items-end mb-4">
+                        <label class="block text-sm font-bold text-gray-700">2. 分割設定</label>
+                        <button id="dlTemplateBtn"
+                            class="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded hover:bg-blue-200 transition">テンプレートDL</button>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">横 (Cols)</label>
+                            <input type="number" id="colInput" value="4" min="1" max="10"
+                                class="w-full border border-gray-300 rounded px-3 py-2 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">縦 (Rows)</label>
+                            <input type="number" id="rowInput" value="4" min="1" max="10"
+                                class="w-full border border-gray-300 rounded px-3 py-2 outline-none">
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-xs text-gray-500 mb-1">メイン/タブ画像</label>
+                        <select id="mainImageIndex" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
+                            <option value="0">1番目 (左上)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow space-y-4">
+                    <label class="block text-sm font-bold text-gray-700">3. オプション</label>
+
+                    <div class="border p-3 rounded bg-green-50 border-green-200">
+                        <div class="flex items-center gap-2">
+                            <input type="checkbox" id="useAI" checked
+                                class="w-5 h-5 text-green-600 rounded focus:ring-green-500 cursor-pointer">
+                            <label for="useAI" class="text-sm font-bold text-gray-800 cursor-pointer select-none">
+                                AI背景除去を実行
+                            </label>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1 ml-7">
+                            人物や文字を認識して切り抜きます。OFFの場合は元の画像のまま処理します。
+                        </p>
+                    </div>
+
+                    <div class="flex items-start gap-2 pt-2">
+                        <input type="checkbox" id="autoCenter" checked
+                            class="mt-1 w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500 cursor-pointer">
+                        <label for="autoCenter" class="text-sm text-gray-700 cursor-pointer select-none">
+                            <span class="font-bold block">自動トリミング＆中央揃え</span>
+                            <span class="text-xs text-gray-500 leading-tight">余白をカットして中央に配置します。</span>
+                        </label>
+                    </div>
+                </div>
+
+                <button id="generateBtn" disabled
+                    class="w-full bg-green-600 text-white font-bold py-3 px-4 rounded shadow-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition flex justify-center items-center gap-2">
+                    <span id="btnText">変換＆ZIP作成</span>
+                </button>
+                <div id="statusContainer" class="hidden text-center">
+                    <div class="loader mb-2"></div>
+                    <div id="statusMsg" class="text-sm font-semibold text-green-700">AIモデル読込中...</div>
+                </div>
+
+            </div>
+
+            <div class="lg:col-span-2">
+                <div class="bg-white p-4 rounded-lg shadow h-full flex flex-col">
+                    <h3 class="text-sm font-bold text-gray-700 mb-2">プレビュー</h3>
+                    <div class="flex-grow canvas-container relative border rounded bg-gray-50 overflow-auto flex items-center justify-center min-h-[400px]"
+                        id="previewContainer">
+                        <p class="text-gray-400 text-sm">画像がここに表示されます</p>
+                        <img id="previewImg" class="hidden max-w-full max-h-full object-contain z-10" alt="Preview">
+                        <div id="gridOverlay"
+                            class="absolute top-0 left-0 pointer-events-none z-20 border-collapse border border-red-500 hidden">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        // DOM Elements
+        const imageInput = document.getElementById('imageInput');
+        const dropZone = document.getElementById('dropZone');
+        const previewImg = document.getElementById('previewImg');
+        const gridOverlay = document.getElementById('gridOverlay');
+        const colInput = document.getElementById('colInput');
+        const rowInput = document.getElementById('rowInput');
+        const generateBtn = document.getElementById('generateBtn');
+        const btnText = document.getElementById('btnText');
+        const statusMsg = document.getElementById('statusMsg');
+        const statusContainer = document.getElementById('statusContainer');
+        const mainImageIndex = document.getElementById('mainImageIndex');
+        const previewContainer = document.getElementById('previewContainer');
+        const autoCenterCheckbox = document.getElementById('autoCenter');
+        const useAICheckbox = document.getElementById('useAI');
+        const dlTemplateBtn = document.getElementById('dlTemplateBtn');
+
+        let originalImage = null;
+
+        // Constants
+        const SPECS = {
+            sticker: { w: 370, h: 320, margin: 10 },
+            main: { w: 240, h: 240 },
+            tab: { w: 96, h: 74 }
+        };
+
+        // Event Listeners
+        if (imageInput) imageInput.addEventListener('change', handleFileSelect);
+        if (colInput) colInput.addEventListener('input', updateGrid);
+        if (rowInput) rowInput.addEventListener('input', updateGrid);
+        window.addEventListener('resize', updateGridUI);
+        if (generateBtn) generateBtn.addEventListener('click', generateZip);
+        if (dlTemplateBtn) dlTemplateBtn.addEventListener('click', downloadTemplate);
+
+        const resizeObserver = new ResizeObserver(() => updateGridUI());
+        if (previewContainer) resizeObserver.observe(previewContainer);
+
+        // Drag and Drop
+        if (dropZone) {
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('bg-green-50', 'border-green-400');
+            });
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.classList.remove('bg-green-50', 'border-green-400');
+            });
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('bg-green-50', 'border-green-400');
+                if (e.dataTransfer.files.length > 0) {
+                    imageInput.files = e.dataTransfer.files;
+                    handleFileSelect({ target: imageInput });
+                }
+            });
+        }
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                originalImage = new Image();
+                originalImage.onload = function () {
+                    previewImg.src = e.target.result;
+                    previewImg.classList.remove('hidden');
+                    previewContainer.querySelector('p')?.remove();
+                    updateGrid();
+                    updateSelectOptions();
+                    generateBtn.disabled = false;
+                }
+                originalImage.src = e.target.result;
+            }
+            reader.readAsDataURL(file);
+        }
+
+        function updateGrid() {
+            if (!originalImage) return;
+            updateGridUI();
+            updateSelectOptions();
+        }
+
+        function updateGridUI() {
+            if (!previewImg.src || previewImg.classList.contains('hidden')) return;
+
+            const cols = parseInt(colInput.value) || 1;
+            const rows = parseInt(rowInput.value) || 1;
+
+            gridOverlay.style.width = `${previewImg.width}px`;
+            gridOverlay.style.height = `${previewImg.height}px`;
+            gridOverlay.style.top = `${previewImg.offsetTop}px`;
+            gridOverlay.style.left = `${previewImg.offsetLeft}px`;
+
+            gridOverlay.classList.remove('hidden');
+            gridOverlay.innerHTML = '';
+            gridOverlay.style.display = 'grid';
+            gridOverlay.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+            gridOverlay.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+
+            const total = cols * rows;
+            for (let i = 0; i < total; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'border border-red-500/50 flex items-center justify-center text-red-600 font-bold text-xs bg-red-100/10 hover:bg-red-100/30 transition';
+                cell.innerText = i + 1;
+                gridOverlay.appendChild(cell);
+            }
+        }
+
+        function updateSelectOptions() {
+            const cols = parseInt(colInput.value) || 1;
+            const rows = parseInt(rowInput.value) || 1;
+            const total = cols * rows;
+            const currentSelection = mainImageIndex.value;
+            mainImageIndex.innerHTML = '';
+            for (let i = 0; i < total; i++) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.text = `${i + 1}番目の画像`;
+                mainImageIndex.appendChild(option);
+            }
+            if (currentSelection < total) mainImageIndex.value = currentSelection;
+        }
+
+        // --- Logic ---
+
+        function getContentBoundingBox(ctx, width, height) {
+            const imgData = ctx.getImageData(0, 0, width, height);
+            const data = imgData.data;
+            let minX = width, minY = height, maxX = 0, maxY = 0, found = false;
+
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    const i = (y * width + x) * 4;
+                    if (data[i + 3] > 20) { // Alpha threshold
+                        if (x < minX) minX = x;
+                        if (x > maxX) maxX = x;
+                        if (y < minY) minY = y;
+                        if (y > maxY) maxY = y;
+                        found = true;
+                    }
+                }
+            }
+            return found ? { x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1 } : null;
+        }
+
+        async function generateZip() {
+            if (!originalImage) return;
+
+            // UI State Update
+            generateBtn.disabled = true;
+            generateBtn.classList.add('hidden');
+            statusContainer.classList.remove('hidden');
+            statusMsg.innerText = "処理を開始します...";
+            statusMsg.className = "text-sm font-semibold text-green-700";
+
+            try {
+                let processImage = originalImage;
+
+                // 1. AI Background Removal (if checked)
+                if (useAICheckbox.checked) {
+                    try {
+                        statusMsg.innerText = "AIが背景を除去中... (初回は時間がかかります)";
+
+                        // Check availability
+                        let removeBgFn = null;
+                        if (typeof imglyRemoveBackground === 'function') {
+                            removeBgFn = imglyRemoveBackground;
+                        } else if (typeof imgly !== 'undefined' && typeof imgly.removeBackground === 'function') {
+                            removeBgFn = imgly.removeBackground;
+                        }
+
+                        if (!removeBgFn) {
+                            throw new Error("AIライブラリが読み込まれていません。");
+                        }
+
+                        // Convert current image src to blob for the library
+                        const response = await fetch(originalImage.src);
+                        const blob = await response.blob();
+
+                        // Run imgly with CDN config for models
+                        const config = {
+                            publicPath: "https://cdn.jsdelivr.net/npm/@imgly/background-removal-data@1.3.0/dist/"
+                        };
+
+                        const noBgBlob = await removeBgFn(blob, config);
+                        const noBgUrl = URL.createObjectURL(noBgBlob);
+
+                        // Create new Image object from result
+                        processImage = new Image();
+                        await new Promise(resolve => {
+                            processImage.onload = resolve;
+                            processImage.src = noBgUrl;
+                        });
+                    } catch (aiError) {
+                        console.warn("AI処理エラー (フォールバック実行):", aiError);
+                        statusMsg.innerText = "AI機能が使えないため、通常の切り抜きで続行します...";
+                        // Wait a moment for user to see the message
+                        await new Promise(r => setTimeout(r, 1500));
+                    }
+                }
+
+                statusMsg.innerText = "スタンプ画像を分割・生成中...";
+                // Allow UI to render
+                await new Promise(r => setTimeout(r, 100));
+
+                const zip = new JSZip();
+                const cols = parseInt(colInput.value);
+                const rows = parseInt(rowInput.value);
+                const totalCells = cols * rows;
+                const cellW = processImage.naturalWidth / cols;
+                const cellH = processImage.naturalHeight / rows;
+                const selectedMainIndex = parseInt(mainImageIndex.value);
+                const shouldAutoCenter = autoCenterCheckbox.checked;
+
+                for (let i = 0; i < totalCells; i++) {
+                    const c = i % cols;
+                    const r = Math.floor(i / cols);
+
+                    // Cut cell
+                    const rawCanvas = document.createElement('canvas');
+                    rawCanvas.width = cellW;
+                    rawCanvas.height = cellH;
+                    const rawCtx = rawCanvas.getContext('2d');
+                    rawCtx.drawImage(processImage, c * cellW, r * cellH, cellW, cellH, 0, 0, cellW, cellH);
+
+                    // Determine Trim
+                    let srcX = 0, srcY = 0, srcW = cellW, srcH = cellH;
+                    if (shouldAutoCenter) {
+                        const bbox = getContentBoundingBox(rawCtx, cellW, cellH);
+                        if (bbox) {
+                            srcX = bbox.x; srcY = bbox.y; srcW = bbox.w; srcH = bbox.h;
+                        }
+                    }
+
+                    // Draw Final
+                    const drawCentered = (targetCanvas, tW, tH, margin) => {
+                        const tCtx = targetCanvas.getContext('2d');
+                        const maxW = tW - (margin * 2);
+                        const maxH = tH - (margin * 2);
+                        const scale = Math.min(maxW / srcW, maxH / srcH);
+                        const drawW = srcW * scale;
+                        const drawH = srcH * scale;
+                        tCtx.drawImage(rawCanvas, srcX, srcY, srcW, srcH, (tW - drawW) / 2, (tH - drawH) / 2, drawW, drawH);
+                    };
+
+                    // Sticker
+                    const stickerCanvas = document.createElement('canvas');
+                    stickerCanvas.width = SPECS.sticker.w;
+                    stickerCanvas.height = SPECS.sticker.h;
+                    drawCentered(stickerCanvas, SPECS.sticker.w, SPECS.sticker.h, SPECS.sticker.margin);
+                    const fileName = `${(i + 1).toString().padStart(2, '0')}.png`;
+                    zip.file(fileName, await new Promise(r => stickerCanvas.toBlob(r)));
+
+                    // Main/Tab
+                    if (i === selectedMainIndex) {
+                        const mainCanvas = document.createElement('canvas');
+                        mainCanvas.width = SPECS.main.w;
+                        mainCanvas.height = SPECS.main.h;
+                        drawCentered(mainCanvas, SPECS.main.w, SPECS.main.h, 0);
+                        zip.file("main.png", await new Promise(r => mainCanvas.toBlob(r)));
+
+                        const tabCanvas = document.createElement('canvas');
+                        tabCanvas.width = SPECS.tab.w;
+                        tabCanvas.height = SPECS.tab.h;
+                        drawCentered(tabCanvas, SPECS.tab.w, SPECS.tab.h, 0);
+                        zip.file("tab.png", await new Promise(r => tabCanvas.toBlob(r)));
+                    }
+                }
+
+                const content = await zip.generateAsync({ type: "blob" });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(content);
+                link.download = "line_stickers_ai.zip";
+                link.click();
+
+                statusMsg.innerText = "完了しました！";
+                setTimeout(() => {
+                    statusContainer.classList.add('hidden');
+                    generateBtn.classList.remove('hidden');
+                    generateBtn.disabled = false;
+                }, 2000);
+
+            } catch (err) {
+                console.error(err);
+                statusMsg.innerText = "エラー: " + err.message;
+                statusMsg.className = "text-sm font-bold text-red-600";
+                generateBtn.classList.remove('hidden'); // Show button again on error
+            }
+        }
+
+        function downloadTemplate() {
+            const cols = parseInt(colInput.value) || 4;
+            const rows = parseInt(rowInput.value) || 4;
+            const cellW = 370;
+            const cellH = 320;
+            const canvas = document.createElement('canvas');
+            canvas.width = cols * cellW;
+            canvas.height = rows * cellH;
+            const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = "#ff0000";
+            ctx.lineWidth = 4;
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.font = "bold 30px 'Noto Sans JP', sans-serif";
+            ctx.fillStyle = "#ff0000";
+
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const x = c * cellW;
+                    const y = r * cellH;
+                    ctx.strokeRect(x, y, cellW, cellH);
+                    ctx.fillText(`${cellW} x ${cellH} px`, x + cellW / 2, y + cellH / 2);
+                }
+            }
+            canvas.toBlob(blob => {
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `template_${cols}x${rows}.png`;
+                link.click();
+            });
+        }
+    </script>
+</body>
+
+</html>
