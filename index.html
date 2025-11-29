@@ -85,11 +85,11 @@
 
             <div class="lg:col-span-1 space-y-6">
 
+                <!-- 1. 画像選択 -->
                 <div class="bg-white p-6 rounded-lg shadow">
                     <label class="block text-sm font-bold mb-2 text-gray-700">1. 画像を選択</label>
                     <div class="relative border-2 border-dashed border-gray-300 rounded-lg p-6 hover:bg-gray-50 transition text-center cursor-pointer"
                         id="dropZone">
-                        <!-- z-10 added to ensure clickability -->
                         <input type="file" id="imageInput" accept="image/png, image/jpeg"
                             class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
                         <div class="space-y-2 pointer-events-none">
@@ -104,6 +104,7 @@
                     </div>
                 </div>
 
+                <!-- 2. 分割設定 -->
                 <div class="bg-white p-6 rounded-lg shadow">
                     <div class="flex justify-between items-end mb-4">
                         <label class="block text-sm font-bold text-gray-700">2. 分割設定</label>
@@ -132,21 +133,73 @@
                     </div>
                 </div>
 
+                <!-- 3. 背景透過設定 -->
                 <div class="bg-white p-6 rounded-lg shadow space-y-4">
-                    <label class="block text-sm font-bold text-gray-700">3. オプション</label>
+                    <label class="block text-sm font-bold text-gray-700">3. 背景透過設定</label>
 
-                    <div class="border p-3 rounded bg-green-50 border-green-200">
+                    <!-- モード切替タブ -->
+                    <div class="flex border-b border-gray-200 mb-4">
+                        <button id="tabColor"
+                            class="flex-1 py-2 text-sm font-bold text-green-600 border-b-2 border-green-600">イラスト(色指定)</button>
+                        <button id="tabAI"
+                            class="flex-1 py-2 text-sm font-medium text-gray-500 hover:text-gray-700">写真(AI)</button>
+                    </div>
+
+                    <!-- 色指定モード設定 -->
+                    <div id="panelColor" class="space-y-3">
                         <div class="flex items-center gap-2">
-                            <input type="checkbox" id="useAI" checked
+                            <input type="checkbox" id="autoRemoveBg" checked
+                                class="w-5 h-5 text-green-600 rounded focus:ring-green-500 cursor-pointer">
+                            <label for="autoRemoveBg"
+                                class="text-sm font-bold text-gray-800 cursor-pointer select-none">
+                                背景を自動除去
+                            </label>
+                        </div>
+                        <p class="text-xs text-gray-500 ml-7">
+                            画像の四隅から繋がっている背景色を自動で消します。
+                        </p>
+
+                        <div class="ml-7 pt-2">
+                            <label class="block text-xs text-gray-500 mb-1">色の許容範囲(あいまいさ): <span
+                                    id="toleranceVal">20</span></label>
+                            <input type="range" id="toleranceRange" min="0" max="100" value="20"
+                                class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                        </div>
+
+                        <div class="bg-yellow-50 p-3 rounded border border-yellow-200 text-xs text-yellow-800 mt-2">
+                            <span class="font-bold">💡 ヒント:</span> プレビュー画像をクリックすると、その部分の色を透明にできます（文字の中などに便利）。
+                        </div>
+
+                        <div class="flex justify-end">
+                            <button id="undoBtn" disabled
+                                class="text-xs flex items-center gap-1 bg-gray-100 px-3 py-1.5 rounded hover:bg-gray-200 disabled:opacity-50 transition">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path d="M3 7v6h6" />
+                                    <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13" />
+                                </svg>
+                                元に戻す
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- AIモード設定 -->
+                    <div id="panelAI" class="hidden space-y-3">
+                        <div class="flex items-center gap-2">
+                            <input type="checkbox" id="useAI"
                                 class="w-5 h-5 text-green-600 rounded focus:ring-green-500 cursor-pointer">
                             <label for="useAI" class="text-sm font-bold text-gray-800 cursor-pointer select-none">
                                 AI背景除去を実行
                             </label>
                         </div>
-                        <p class="text-xs text-gray-500 mt-1 ml-7">
-                            人物や文字を認識して切り抜きます。OFFの場合は元の画像のまま処理します。
+                        <p class="text-xs text-gray-500 ml-7">
+                            人物や文字を認識して切り抜きます。写真向きです。<br>
+                            ※初回はモデルDLに時間がかかります。
                         </p>
                     </div>
+
+                    <hr class="border-gray-100">
 
                     <div class="flex items-start gap-2 pt-2">
                         <input type="checkbox" id="autoCenter" checked
@@ -164,18 +217,23 @@
                 </button>
                 <div id="statusContainer" class="hidden text-center" style="display: none;">
                     <div class="loader mb-2"></div>
-                    <div id="statusMsg" class="text-sm font-semibold text-green-700">AIモデル読込中...</div>
+                    <div id="statusMsg" class="text-sm font-semibold text-green-700">処理中...</div>
                 </div>
 
             </div>
 
             <div class="lg:col-span-2">
                 <div class="bg-white p-4 rounded-lg shadow h-full flex flex-col">
-                    <h3 class="text-sm font-bold text-gray-700 mb-2">プレビュー</h3>
-                    <div class="flex-grow canvas-container relative border rounded bg-gray-50 overflow-auto flex items-center justify-center min-h-[400px]"
+                    <h3 class="text-sm font-bold text-gray-700 mb-2 flex justify-between items-center">
+                        プレビュー & 透過編集
+                        <span class="text-xs font-normal text-gray-500">クリックで透過 / ドラッグで移動</span>
+                    </h3>
+                    <div class="flex-grow canvas-container relative border rounded bg-gray-50 overflow-hidden flex items-center justify-center min-h-[400px]"
                         id="previewContainer">
-                        <p class="text-gray-400 text-sm">画像がここに表示されます</p>
-                        <img id="previewImg" class="hidden max-w-full max-h-full object-contain z-10" alt="Preview">
+                        <p class="text-gray-400 text-sm pointer-events-none">画像がここに表示されます</p>
+                        <!-- Canvas for editing -->
+                        <canvas id="editorCanvas"
+                            class="hidden max-w-full max-h-full object-contain z-10 cursor-crosshair"></canvas>
                         <div id="gridOverlay"
                             class="absolute top-0 left-0 pointer-events-none z-20 border-collapse border border-red-500 hidden">
                         </div>
@@ -190,7 +248,6 @@
         // DOM Elements
         const imageInput = document.getElementById('imageInput');
         const dropZone = document.getElementById('dropZone');
-        const previewImg = document.getElementById('previewImg');
         const gridOverlay = document.getElementById('gridOverlay');
         const colInput = document.getElementById('colInput');
         const rowInput = document.getElementById('rowInput');
@@ -201,10 +258,24 @@
         const mainImageIndex = document.getElementById('mainImageIndex');
         const previewContainer = document.getElementById('previewContainer');
         const autoCenterCheckbox = document.getElementById('autoCenter');
-        const useAICheckbox = document.getElementById('useAI');
         const dlTemplateBtn = document.getElementById('dlTemplateBtn');
 
+        // New Elements for Color Removal
+        const editorCanvas = document.getElementById('editorCanvas');
+        const tabColor = document.getElementById('tabColor');
+        const tabAI = document.getElementById('tabAI');
+        const panelColor = document.getElementById('panelColor');
+        const panelAI = document.getElementById('panelAI');
+        const autoRemoveBgCheckbox = document.getElementById('autoRemoveBg');
+        const toleranceRange = document.getElementById('toleranceRange');
+        const toleranceVal = document.getElementById('toleranceVal');
+        const undoBtn = document.getElementById('undoBtn');
+        const useAICheckbox = document.getElementById('useAI');
+
         let originalImage = null;
+        let currentMode = 'color'; // 'color' or 'ai'
+        let history = []; // Undo history
+        let ctx = null; // Editor canvas context
 
         // Constants
         const SPECS = {
@@ -220,6 +291,18 @@
         window.addEventListener('resize', updateGridUI);
         if (generateBtn) generateBtn.addEventListener('click', generateZip);
         if (dlTemplateBtn) dlTemplateBtn.addEventListener('click', downloadTemplate);
+
+        // Tab Switching
+        tabColor.addEventListener('click', () => switchMode('color'));
+        tabAI.addEventListener('click', () => switchMode('ai'));
+
+        // Color Removal Controls
+        toleranceRange.addEventListener('input', (e) => toleranceVal.innerText = e.target.value);
+        autoRemoveBgCheckbox.addEventListener('change', applyAutoRemoval);
+        undoBtn.addEventListener('click', undo);
+
+        // Canvas Interaction
+        editorCanvas.addEventListener('click', handleCanvasClick);
 
         const resizeObserver = new ResizeObserver(() => updateGridUI());
         if (previewContainer) resizeObserver.observe(previewContainer);
@@ -243,6 +326,27 @@
             });
         }
 
+        function switchMode(mode) {
+            currentMode = mode;
+            if (mode === 'color') {
+                tabColor.className = "flex-1 py-2 text-sm font-bold text-green-600 border-b-2 border-green-600";
+                tabAI.className = "flex-1 py-2 text-sm font-medium text-gray-500 hover:text-gray-700";
+                panelColor.classList.remove('hidden');
+                panelAI.classList.add('hidden');
+                editorCanvas.style.cursor = 'crosshair';
+            } else {
+                tabColor.className = "flex-1 py-2 text-sm font-medium text-gray-500 hover:text-gray-700";
+                tabAI.className = "flex-1 py-2 text-sm font-bold text-green-600 border-b-2 border-green-600";
+                panelColor.classList.add('hidden');
+                panelAI.classList.remove('hidden');
+                editorCanvas.style.cursor = 'default';
+                // Restore original image for AI mode preview
+                if (originalImage) {
+                    resetCanvas();
+                }
+            }
+        }
+
         function handleFileSelect(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -251,9 +355,21 @@
             reader.onload = function (e) {
                 originalImage = new Image();
                 originalImage.onload = function () {
-                    previewImg.src = e.target.result;
-                    previewImg.classList.remove('hidden');
+                    // Setup Canvas
+                    editorCanvas.width = originalImage.width;
+                    editorCanvas.height = originalImage.height;
+                    ctx = editorCanvas.getContext('2d', { willReadFrequently: true });
+
+                    resetCanvas();
+
+                    editorCanvas.classList.remove('hidden');
                     previewContainer.querySelector('p')?.remove();
+
+                    // Initial Auto Removal
+                    if (currentMode === 'color' && autoRemoveBgCheckbox.checked) {
+                        applyAutoRemoval();
+                    }
+
                     updateGrid();
                     updateSelectOptions();
                     generateBtn.disabled = false;
@@ -263,6 +379,126 @@
             reader.readAsDataURL(file);
         }
 
+        function resetCanvas() {
+            if (!ctx || !originalImage) return;
+            ctx.clearRect(0, 0, editorCanvas.width, editorCanvas.height);
+            ctx.drawImage(originalImage, 0, 0);
+            saveState();
+            history = [ctx.getImageData(0, 0, editorCanvas.width, editorCanvas.height)]; // Reset history
+            updateUndoBtn();
+        }
+
+        function saveState() {
+            if (!ctx) return;
+            if (history.length > 10) history.shift(); // Limit history
+            history.push(ctx.getImageData(0, 0, editorCanvas.width, editorCanvas.height));
+            updateUndoBtn();
+        }
+
+        function undo() {
+            if (history.length <= 1) return;
+            history.pop(); // Remove current state
+            const prevState = history[history.length - 1];
+            ctx.putImageData(prevState, 0, 0);
+            updateUndoBtn();
+        }
+
+        function updateUndoBtn() {
+            undoBtn.disabled = history.length <= 1;
+            undoBtn.style.opacity = history.length <= 1 ? '0.5' : '1';
+        }
+
+        function applyAutoRemoval() {
+            if (!ctx || !autoRemoveBgCheckbox.checked) {
+                resetCanvas();
+                return;
+            }
+            // Reset first
+            ctx.drawImage(originalImage, 0, 0);
+
+            // Remove corners
+            const corners = [
+                { x: 0, y: 0 },
+                { x: editorCanvas.width - 1, y: 0 },
+                { x: 0, y: editorCanvas.height - 1 },
+                { x: editorCanvas.width - 1, y: editorCanvas.height - 1 }
+            ];
+
+            const tolerance = parseInt(toleranceRange.value);
+
+            // Process corners
+            corners.forEach(p => {
+                floodFill(p.x, p.y, tolerance);
+            });
+            saveState();
+        }
+
+        function handleCanvasClick(e) {
+            if (currentMode !== 'color' || !ctx) return;
+
+            const rect = editorCanvas.getBoundingClientRect();
+            const scaleX = editorCanvas.width / rect.width;
+            const scaleY = editorCanvas.height / rect.height;
+
+            const x = Math.floor((e.clientX - rect.left) * scaleX);
+            const y = Math.floor((e.clientY - rect.top) * scaleY);
+
+            const tolerance = parseInt(toleranceRange.value);
+            floodFill(x, y, tolerance);
+            saveState();
+        }
+
+        // Flood Fill Algorithm (Queue-based)
+        function floodFill(startX, startY, tolerance) {
+            const width = editorCanvas.width;
+            const height = editorCanvas.height;
+            const imageData = ctx.getImageData(0, 0, width, height);
+            const data = imageData.data;
+
+            const startPos = (startY * width + startX) * 4;
+            const startR = data[startPos];
+            const startG = data[startPos + 1];
+            const startB = data[startPos + 2];
+            const startA = data[startPos + 3];
+
+            if (startA === 0) return; // Already transparent
+
+            const queue = [[startX, startY]];
+            const visited = new Uint8Array(width * height); // Track visited pixels
+
+            while (queue.length > 0) {
+                const [x, y] = queue.pop();
+                const pos = (y * width + x) * 4;
+
+                if (visited[y * width + x]) continue;
+
+                // Check color match
+                const r = data[pos];
+                const g = data[pos + 1];
+                const b = data[pos + 2];
+                const a = data[pos + 3];
+
+                if (a === 0) continue; // Skip if already transparent
+
+                const diff = Math.abs(r - startR) + Math.abs(g - startG) + Math.abs(b - startB);
+
+                // Tolerance check (simple sum of diffs < tolerance * 3)
+                if (diff <= tolerance * 3) {
+                    // Make transparent
+                    data[pos + 3] = 0;
+                    visited[y * width + x] = 1;
+
+                    // Add neighbors
+                    if (x > 0) queue.push([x - 1, y]);
+                    if (x < width - 1) queue.push([x + 1, y]);
+                    if (y > 0) queue.push([x, y - 1]);
+                    if (y < height - 1) queue.push([x, y + 1]);
+                }
+            }
+
+            ctx.putImageData(imageData, 0, 0);
+        }
+
         function updateGrid() {
             if (!originalImage) return;
             updateGridUI();
@@ -270,15 +506,23 @@
         }
 
         function updateGridUI() {
-            if (!previewImg.src || previewImg.classList.contains('hidden')) return;
+            if (!editorCanvas.width || editorCanvas.classList.contains('hidden')) return;
 
             const cols = parseInt(colInput.value) || 1;
             const rows = parseInt(rowInput.value) || 1;
 
-            gridOverlay.style.width = `${previewImg.width}px`;
-            gridOverlay.style.height = `${previewImg.height}px`;
-            gridOverlay.style.top = `${previewImg.offsetTop}px`;
-            gridOverlay.style.left = `${previewImg.offsetLeft}px`;
+            // Match overlay to canvas display size
+            const rect = editorCanvas.getBoundingClientRect();
+            // Need to account for object-contain centering if parent is larger
+            // But here editorCanvas is max-w-full, so rect should be accurate to the visible image
+
+            // However, if the canvas is smaller than container, it might be centered.
+            // We need to position the gridOverlay exactly over the canvas element.
+
+            gridOverlay.style.width = `${editorCanvas.offsetWidth}px`;
+            gridOverlay.style.height = `${editorCanvas.offsetHeight}px`;
+            gridOverlay.style.top = `${editorCanvas.offsetTop}px`;
+            gridOverlay.style.left = `${editorCanvas.offsetLeft}px`;
 
             gridOverlay.classList.remove('hidden');
             gridOverlay.innerHTML = '';
@@ -289,7 +533,7 @@
             const total = cols * rows;
             for (let i = 0; i < total; i++) {
                 const cell = document.createElement('div');
-                cell.className = 'border border-red-500/50 flex items-center justify-center text-red-600 font-bold text-xs bg-red-100/10 hover:bg-red-100/30 transition';
+                cell.className = 'border border-red-500/50 flex items-center justify-center text-red-600 font-bold text-xs bg-red-100/10 hover:bg-red-100/30 transition pointer-events-none';
                 cell.innerText = i + 1;
                 gridOverlay.appendChild(cell);
             }
@@ -339,47 +583,46 @@
             generateBtn.disabled = true;
             generateBtn.classList.add('hidden');
             statusContainer.classList.remove('hidden');
-            statusContainer.style.display = 'block'; // Ensure it's visible
+            statusContainer.style.display = 'block';
             statusMsg.innerText = "処理を開始します...";
             statusMsg.className = "text-sm font-semibold text-green-700";
 
             try {
-                let processImage = originalImage;
+                let processImage;
 
-                // 1. AI Background Removal (if checked)
-                if (useAICheckbox.checked) {
-                    try {
-                        statusMsg.innerText = "AIが背景を除去中... (初回は時間がかかります)";
+                // Determine source image based on mode
+                if (currentMode === 'color') {
+                    // Use the edited canvas as source
+                    processImage = new Image();
+                    processImage.src = editorCanvas.toDataURL();
+                    await new Promise(r => processImage.onload = r);
+                } else {
+                    // AI Mode
+                    processImage = originalImage;
+                    if (useAICheckbox.checked) {
+                        try {
+                            statusMsg.innerText = "AIが背景を除去中... (初回は時間がかかります)";
+                            if (typeof window.removeBackground !== 'function') throw new Error("AIライブラリ未ロード");
 
-                        // Check if removeBackground is available
-                        if (typeof window.removeBackground !== 'function') {
-                            throw new Error("AIライブラリが読み込まれていません。");
+                            const response = await fetch(originalImage.src);
+                            const blob = await response.blob();
+                            const noBgBlob = await window.removeBackground(blob);
+                            const noBgUrl = URL.createObjectURL(noBgBlob);
+
+                            processImage = new Image();
+                            await new Promise(resolve => {
+                                processImage.onload = resolve;
+                                processImage.src = noBgUrl;
+                            });
+                        } catch (aiError) {
+                            console.warn("AI Error:", aiError);
+                            statusMsg.innerText = "AIエラー。通常処理で続行します。";
+                            await new Promise(r => setTimeout(r, 1000));
                         }
-
-                        // Convert current image src to blob for the library
-                        const response = await fetch(originalImage.src);
-                        const blob = await response.blob();
-
-                        // Run removeBackground
-                        const noBgBlob = await window.removeBackground(blob);
-                        const noBgUrl = URL.createObjectURL(noBgBlob);
-
-                        // Create new Image object from result
-                        processImage = new Image();
-                        await new Promise(resolve => {
-                            processImage.onload = resolve;
-                            processImage.src = noBgUrl;
-                        });
-                    } catch (aiError) {
-                        console.warn("AI処理エラー (フォールバック実行):", aiError);
-                        statusMsg.innerText = "AI機能が使えないため、通常の切り抜きで続行します...";
-                        // Wait a moment for user to see the message
-                        await new Promise(r => setTimeout(r, 1500));
                     }
                 }
 
                 statusMsg.innerText = "スタンプ画像を分割・生成中...";
-                // Allow UI to render
                 await new Promise(r => setTimeout(r, 100));
 
                 const zip = new JSZip();
@@ -449,7 +692,7 @@
                 const content = await zip.generateAsync({ type: "blob" });
                 const link = document.createElement('a');
                 link.href = URL.createObjectURL(content);
-                link.download = "line_stickers_ai.zip";
+                link.download = "line_stickers.zip";
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
@@ -466,7 +709,7 @@
                 console.error(err);
                 statusMsg.innerText = "エラー: " + err.message;
                 statusMsg.className = "text-sm font-bold text-red-600";
-                generateBtn.classList.remove('hidden'); // Show button again on error
+                generateBtn.classList.remove('hidden');
             }
         }
 
