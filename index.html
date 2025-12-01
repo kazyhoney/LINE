@@ -147,23 +147,27 @@
                                 class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
                         </div>
 
-                        <div class="flex justify-end">
+                        <div class="flex gap-2">
                             <button id="undoBtn" disabled
-                                class="text-xs flex items-center gap-1 bg-gray-100 px-3 py-1.5 rounded hover:bg-gray-200 disabled:opacity-50 transition">
-                                <svg id="undoIcon" xmlns="http://www.w3.org/2000/svg" width="14" height="14"
-                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                    stroke-linecap="round" stroke-linejoin="round">
+                                class="flex-1 text-xs flex items-center justify-center gap-1 bg-gray-100 px-3 py-1.5 rounded hover:bg-gray-200 disabled:opacity-50 transition">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
                                     <path d="M3 7v6h6" />
                                     <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13" />
                                 </svg>
-                                <svg id="reRemoveIcon" class="hidden" xmlns="http://www.w3.org/2000/svg" width="14"
-                                    height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                    stroke-linecap="round" stroke-linejoin="round">
+                                元に戻す
+                            </button>
+                            <button id="reRemoveBtn" disabled
+                                class="hidden flex-1 text-xs flex items-center justify-center gap-1 bg-green-500 text-white px-3 py-1.5 rounded hover:bg-green-600 disabled:opacity-50 transition">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
                                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                                     <polyline points="7 10 12 15 17 10" />
                                     <line x1="12" y1="15" x2="12" y2="3" />
                                 </svg>
-                                <span id="undoText">元に戻す</span>
+                                背景を除去
                             </button>
                         </div>
                     </div>
@@ -647,9 +651,25 @@
 
 
         // Color Removal Controls
-        toleranceRange.addEventListener('input', (e) => toleranceVal.innerText = e.target.value);
+        toleranceRange.addEventListener('input', (e) => {
+            toleranceVal.innerText = e.target.value;
+
+            // If background was removed and slider changed, show both buttons
+            if (backgroundRemoved) {
+                toleranceChanged = true;
+                updateButtons();
+            }
+        });
         autoRemoveBgCheckbox.addEventListener('change', applyAutoRemoval);
         undoBtn.addEventListener('click', undo);
+
+        // Re-remove button listener
+        const reRemoveBtn = document.getElementById('reRemoveBtn');
+        if (reRemoveBtn) {
+            reRemoveBtn.addEventListener('click', () => {
+                applyAutoRemoval();
+            });
+        }
 
         // Canvas Interaction
         editorCanvas.addEventListener('click', handleCanvasClick);
@@ -723,57 +743,51 @@
             ctx.drawImage(originalImage, 0, 0);
             saveState();
             history = [ctx.getImageData(0, 0, editorCanvas.width, editorCanvas.height)]; // Reset history
-            isUndoMode = true; // Reset to undo mode
-            updateUndoBtn();
+            backgroundRemoved = false;
+            toleranceChanged = false;
+            updateButtons();
         }
 
         function saveState() {
             if (!ctx) return;
             if (history.length > 10) history.shift(); // Limit history
             history.push(ctx.getImageData(0, 0, editorCanvas.width, editorCanvas.height));
-            updateUndoBtn();
+            updateButtons(); // Call updateButtons instead of updateUndoBtn
         }
 
-        let isUndoMode = true; // Track button state
+        let backgroundRemoved = false; // Track if background was removed
+        let toleranceChanged = false;  // Track if slider was adjusted after removal
 
         function undo() {
-            if (isUndoMode) {
-                // Undo mode
-                if (history.length <= 1) return;
-                history.pop(); // Remove current state
-                const prevState = history[history.length - 1];
-                ctx.putImageData(prevState, 0, 0);
+            if (history.length <= 1) return;
+            history.pop(); // Remove current state
+            const prevState = history[history.length - 1];
+            ctx.putImageData(prevState, 0, 0);
 
-                // Switch to re-remove mode
-                isUndoMode = false;
-                updateUndoBtn();
-            } else {
-                // Re-remove background mode
-                applyAutoRemoval();
-
-                // Switch back to undo mode
-                isUndoMode = true;
-                updateUndoBtn();
-            }
+            backgroundRemoved = false;
+            toleranceChanged = false;
+            updateButtons();
         }
 
-        function updateUndoBtn() {
-            const undoIcon = document.getElementById('undoIcon');
-            const reRemoveIcon = document.getElementById('reRemoveIcon');
-            const undoText = document.getElementById('undoText');
+        function updateButtons() {
+            // Assuming reRemoveBtn is defined globally or passed
 
-            if (isUndoMode) {
-                // Show undo icon and text
-                undoIcon.classList.remove('hidden');
-                reRemoveIcon.classList.add('hidden');
-                undoText.textContent = '元に戻す';
-                undoBtn.disabled = history.length <= 1;
-            } else {
-                // Show re-remove icon and text
-                undoIcon.classList.add('hidden');
-                reRemoveIcon.classList.remove('hidden');
-                undoText.textContent = '背景を除去';
+            if (toleranceChanged && backgroundRemoved) {
+                // Show both buttons
+                undoBtn.classList.remove('hidden');
+                reRemoveBtn.classList.remove('hidden');
                 undoBtn.disabled = false;
+                reRemoveBtn.disabled = false;
+            } else if (backgroundRemoved) {
+                // Show only undo button
+                undoBtn.classList.remove('hidden');
+                reRemoveBtn.classList.add('hidden');
+                undoBtn.disabled = false;
+            } else {
+                // Initial state - only undo button, disabled
+                undoBtn.classList.remove('hidden');
+                reRemoveBtn.classList.add('hidden');
+                undoBtn.disabled = history.length <= 1;
             }
         }
 
@@ -803,6 +817,10 @@
                 floodFill(p.x, p.y, tolerance);
             });
             saveState();
+
+            backgroundRemoved = true;
+            toleranceChanged = false;
+            updateButtons();
         }
 
         function handleCanvasClick(e) {
@@ -1192,10 +1210,30 @@
                 const tempCtx = tempCanvas.getContext('2d', { willReadFrequently: true });
                 tempCtx.drawImage(editorCanvas, c * cellW, r * cellH, cellW, cellH, 0, 0, SPECS.sticker.w, SPECS.sticker.h);
 
+                // Calculate auto-center position
+                let initialPosition = { x: 0, y: 0 };
+                const bbox = getContentBoundingBox(tempCtx, SPECS.sticker.w, SPECS.sticker.h);
+                
+                if (bbox) {
+                    // Calculate object center
+                    const objectCenterX = bbox.x + bbox.w / 2;
+                    const objectCenterY = bbox.y + bbox.h / 2;
+                    
+                    // Calculate canvas center
+                    const canvasCenterX = SPECS.sticker.w / 2;
+                    const canvasCenterY = SPECS.sticker.h / 2;
+                    
+                    // Calculate offset to center the object
+                    initialPosition = {
+                        x: Math.round(canvasCenterX - objectCenterX),
+                        y: Math.round(canvasCenterY - objectCenterY)
+                    };
+                }
+
                 cellEditorStates[index] = {
                     imageData: tempCtx.getImageData(0, 0, SPECS.sticker.w, SPECS.sticker.h),
                     originalImageData: originalCtx.getImageData(0, 0, SPECS.sticker.w, SPECS.sticker.h), // NEW
-                    position: { x: 0, y: 0 },
+                    position: initialPosition,
                     history: [],
                     historyIndex: -1
                 };
