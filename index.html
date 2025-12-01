@@ -1246,19 +1246,38 @@
                 const cellW = editorCanvas.width / cols;
                 const cellH = editorCanvas.height / rows;
 
+                // Calculate aspect ratio to fit (contain)
+                const srcRatio = cellW / cellH;
+                const targetRatio = SPECS.sticker.w / SPECS.sticker.h;
+                let drawW, drawH, drawX, drawY;
+
+                if (srcRatio > targetRatio) {
+                    // Source is wider: Fit to width
+                    drawW = SPECS.sticker.w;
+                    drawH = drawW / srcRatio;
+                    drawX = 0;
+                    drawY = (SPECS.sticker.h - drawH) / 2;
+                } else {
+                    // Source is taller: Fit to height
+                    drawH = SPECS.sticker.h;
+                    drawW = drawH * srcRatio;
+                    drawY = 0;
+                    drawX = (SPECS.sticker.w - drawW) / 2;
+                }
+
                 // Extract from ORIGINAL image (before transparency)
                 const originalCanvas = document.createElement('canvas');
                 originalCanvas.width = SPECS.sticker.w;
                 originalCanvas.height = SPECS.sticker.h;
                 const originalCtx = originalCanvas.getContext('2d', { willReadFrequently: true });
-                originalCtx.drawImage(originalImage, c * cellW, r * cellH, cellW, cellH, 0, 0, SPECS.sticker.w, SPECS.sticker.h);
+                originalCtx.drawImage(originalImage, c * cellW, r * cellH, cellW, cellH, drawX, drawY, drawW, drawH);
 
                 // Extract from edited canvas (after transparency)
                 const tempCanvas = document.createElement('canvas');
                 tempCanvas.width = SPECS.sticker.w;
                 tempCanvas.height = SPECS.sticker.h;
                 const tempCtx = tempCanvas.getContext('2d', { willReadFrequently: true });
-                tempCtx.drawImage(editorCanvas, c * cellW, r * cellH, cellW, cellH, 0, 0, SPECS.sticker.w, SPECS.sticker.h);
+                tempCtx.drawImage(editorCanvas, c * cellW, r * cellH, cellW, cellH, drawX, drawY, drawW, drawH);
 
                 // Calculate auto-center position
                 // Use stricter threshold (128) to ignore faint noise/shadows for centering
