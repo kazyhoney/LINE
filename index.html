@@ -191,8 +191,7 @@
             <div class="lg:col-span-2">
                 <div class="bg-white p-4 rounded-lg shadow h-full flex flex-col">
                     <h3 class="text-sm font-bold text-gray-700 mb-2 flex justify-between items-center">
-                        プレビュー & 透過編集
-                        <span class="text-xs font-normal text-gray-500">チェックボックスで画像を選択 / クリックで透過</span>
+                        プレビュー画面
                     </h3>
                     <div class="flex-grow canvas-container relative border rounded bg-gray-50 overflow-hidden flex items-center justify-center min-h-[400px]"
                         id="previewContainer">
@@ -208,6 +207,236 @@
             </div>
 
         </div>
+
+        <!-- Detail Editor -->
+        <div id="detailEditor" class="hidden mt-6 bg-white p-6 rounded-lg shadow">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-sm font-bold text-gray-700">詳細編集 - 画像 <span id="detailEditorIndex">1</span></h3>
+                <!-- Navigation -->
+                <div class="flex gap-2">
+                    <button id="prevImageBtn"
+                        class="px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition">
+                        ← 前の画像
+                    </button>
+                    <button id="closeEditorBtn"
+                        class="px-6 py-2 text-sm bg-green-600 text-white rounded hover:bg-green-700 transition font-bold">
+                        編集完了して戻る
+                    </button>
+                    <button id="nextImageBtn"
+                        class="px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition">
+                        次の画像 →
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <!-- Canvas Area -->
+                <div class="lg:col-span-3">
+                    <div
+                        class="canvas-container relative border rounded bg-gray-50 overflow-hidden w-full h-[70vh] flex items-center justify-center">
+                        <!-- Center Grid Overlay -->
+                        <div id="centerGrid" class="absolute inset-0 pointer-events-none hidden z-20">
+                            <div class="absolute top-1/2 left-0 w-full h-px bg-red-500/50"></div>
+                            <div class="absolute left-1/2 top-0 h-full w-px bg-red-500/50"></div>
+                        </div>
+                        <canvas id="detailCanvas"
+                            class="absolute shadow-lg bg-[url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAMUlEQVQ4T2NkYGAQYcAP3uCTZhw1gGGYhAGBZIA/nYDCgBDAm9BGDWAAJyRCgLaBCAAgXwixzAS0pgAAAABJRU5ErkJggg==')]"
+                            style="cursor: crosshair;"></canvas>
+                        <div id="detailCanvasWrapper" style="position: absolute; transform-origin: center center;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tool Panel -->
+                <div class="lg:col-span-1 space-y-4">
+                    <!-- Tool Selection -->
+                    <div class="bg-gray-50 p-4 rounded">
+                        <label class="block text-xs font-bold text-gray-700 mb-2">ツール選択</label>
+                        <div class="space-y-2">
+                            <button id="toolMove"
+                                class="w-full flex items-center gap-2 px-3 py-2 rounded bg-white border-2 border-gray-300 hover:border-green-500 transition">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <polyline points="5 9 2 12 5 15"></polyline>
+                                    <polyline points="9 5 12 2 15 5"></polyline>
+                                    <polyline points="15 19 12 22 9 19"></polyline>
+                                    <polyline points="19 9 22 12 19 15"></polyline>
+                                    <line x1="2" y1="12" x2="22" y2="12"></line>
+                                    <line x1="12" y1="2" x2="12" y2="22"></line>
+                                </svg>
+                                <span class="text-sm">移動ツール</span>
+                            </button>
+                            <button id="toolBrush"
+                                class="w-full flex items-center gap-2 px-3 py-2 rounded bg-white border-2 border-green-500 hover:border-green-500 transition">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path d="m9.06 11.9 8.07-8.06a2.85 2.85 0 1 1 4.03 4.03l-8.06 8.08"></path>
+                                    <path
+                                        d="M7.07 14.94c-1.66 0-3 1.35-3 3.02 0 1.33-2.5 1.52-2 2.02 1.08 1.1 2.49 2.02 4 2.02 2.2 0 4-1.8 4-4.04a3.01 3.01 0 0 0-3-3.02z">
+                                    </path>
+                                </svg>
+                                <span class="text-sm">透過ブラシ</span>
+                            </button>
+                            <button id="toolMagicWand"
+                                class="w-full flex items-center gap-2 px-3 py-2 rounded bg-white border-2 border-gray-300 hover:border-green-500 transition">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path d="M15 4V2"></path>
+                                    <path d="M15 16v-2"></path>
+                                    <path d="M8 9h2"></path>
+                                    <path d="M20 9h2"></path>
+                                    <path d="M17.8 11.8 19 13"></path>
+                                    <path d="M15 9h0"></path>
+                                    <path d="M17.8 6.2 19 5"></path>
+                                    <path d="m3 21 9-9"></path>
+                                    <path d="M12.2 6.2 11 5"></path>
+                                </svg>
+                                <span class="text-sm">自動透過</span>
+                            </button>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-2">V: 移動 / B: ブラシ / W: 自動透過</div>
+                    </div>
+
+                    <!-- Brush Size (only visible when brush tool is selected) -->
+                    <div id="brushSizePanel" class="bg-gray-50 p-4 rounded">
+                        <label class="block text-xs font-bold text-gray-700 mb-2">ブラシサイズ: <span
+                                id="brushSizeVal">15</span>px</label>
+                        <input type="range" id="brushSizeSlider" min="1" max="50" value="15"
+                            class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                    </div>
+
+                    <!-- Mode Selection (only visible when brush tool is selected) -->
+                    <div id="brushModePanel" class="bg-gray-50 p-4 rounded">
+                        <label class="block text-xs font-bold text-gray-700 mb-2">モード</label>
+                        <div class="space-y-2">
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" name="brushMode" value="erase" checked
+                                    class="w-4 h-4 text-green-600">
+                                <span class="text-sm">透過</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" name="brushMode" value="restore" class="w-4 h-4 text-green-600">
+                                <span class="text-sm">復元</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Zoom Controls -->
+                    <div class="bg-gray-50 p-4 rounded">
+                        <label class="block text-xs font-bold text-gray-700 mb-2">ズーム</label>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button
+                                class="zoom-btn px-3 py-2 text-sm bg-white border-2 border-green-500 rounded hover:bg-green-50 transition"
+                                data-zoom="1">100%</button>
+                            <button
+                                class="zoom-btn px-3 py-2 text-sm bg-white border-2 border-gray-300 rounded hover:bg-green-50 transition"
+                                data-zoom="2">200%</button>
+                            <button
+                                class="zoom-btn px-3 py-2 text-sm bg-white border-2 border-gray-300 rounded hover:bg-green-50 transition"
+                                data-zoom="4">400%</button>
+                        </div>
+                    </div>
+
+                    <!-- Background Pattern -->
+                    <div class="bg-gray-50 p-4 rounded">
+                        <label class="block text-xs font-bold text-gray-700 mb-2">背景パターン</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button
+                                class="bg-pattern-btn px-3 py-2 text-xs bg-white border-2 border-green-500 rounded hover:bg-green-50 transition"
+                                data-pattern="checker">市松模様</button>
+                            <button
+                                class="bg-pattern-btn px-3 py-2 text-xs bg-white border-2 border-gray-300 rounded hover:bg-green-50 transition"
+                                data-pattern="dark">暗い背景</button>
+                            <button
+                                class="bg-pattern-btn px-3 py-2 text-xs bg-white border-2 border-gray-300 rounded hover:bg-green-50 transition"
+                                data-pattern="white">明るい背景</button>
+                            <button
+                                class="bg-pattern-btn px-3 py-2 text-xs bg-white border-2 border-gray-300 rounded hover:bg-green-50 transition"
+                                data-pattern="none">なし</button>
+                        </div>
+                    </div>
+
+                    <!-- Position Controls (only visible when move tool is selected) -->
+                    <div id="positionPanel" class="bg-gray-50 p-4 rounded hidden">
+                        <label class="block text-xs font-bold text-gray-700 mb-2">位置</label>
+                        <div class="text-xs text-gray-600 mb-2">
+                            X: <span id="posX">0</span>px, Y: <span id="posY">0</span>px
+                        </div>
+                        <button id="centerBtn"
+                            class="w-full px-3 py-2 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 transition">中央に配置</button>
+                        <div class="text-xs text-gray-500 mt-2">矢印キー: 1px / Shift+矢印: 10px</div>
+                    </div>
+
+                    <!-- History Controls -->
+                    <div class="bg-gray-50 p-4 rounded">
+                        <label class="block text-xs font-bold text-gray-700 mb-2">履歴</label>
+                        <div class="flex gap-2 mb-2">
+                            <button id="detailUndoBtn" disabled
+                                class="flex-1 px-3 py-2 text-sm bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 transition">←
+                                戻る</button>
+                            <button id="detailRedoBtn" disabled
+                                class="flex-1 px-3 py-2 text-sm bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 transition">進む
+                                →</button>
+                        </div>
+                        <button id="detailResetBtn"
+                            class="w-full px-3 py-2 text-sm bg-red-500 text-white rounded hover:bg-red-600 transition">リセット</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- LINE Chat Preview -->
+        <div id="linePreview" class="hidden mt-6 bg-white p-6 rounded-lg shadow">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-gray-700">完成イメージ</h3>
+                <!-- Background Switcher -->
+                <div class="flex gap-2">
+                    <button
+                        class="preview-bg-btn px-4 py-2 text-sm bg-white border-2 border-gray-300 rounded hover:bg-gray-50 transition"
+                        data-bg="light">Light</button>
+                    <button
+                        class="preview-bg-btn px-4 py-2 text-sm bg-white border-2 border-gray-300 rounded hover:bg-gray-50 transition"
+                        data-bg="normal">Normal</button>
+                    <button
+                        class="preview-bg-btn px-4 py-2 text-sm bg-white border-2 border-green-500 rounded hover:bg-gray-50 transition"
+                        data-bg="dark">Dark</button>
+                </div>
+            </div>
+
+            <!-- Chat Container -->
+            <div id="chatContainer" class="relative rounded-lg overflow-hidden border-2 border-gray-300"
+                style="min-height: 500px; background: #1a1a1a;">
+                <!-- Header -->
+                <div class="bg-white border-b border-gray-200 p-3 flex items-center gap-3">
+                    <button class="text-gray-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M15 18l-6-6 6-6" />
+                        </svg>
+                    </button>
+                    <div class="flex-1 text-center">
+                        <div class="font-bold text-gray-800">完成イメージ</div>
+                    </div>
+                    <button class="text-gray-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="1" />
+                            <circle cx="12" cy="5" r="1" />
+                            <circle cx="12" cy="19" r="1" />
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Chat Messages -->
+                <div id="chatMessages" class="p-4 space-y-3" style="min-height: 400px;">
+                    <!-- Messages will be inserted here by JavaScript -->
+                </div>
+            </div>
+        </div>
+
     </main>
 
     <script>
@@ -233,10 +462,51 @@
         const toleranceVal = document.getElementById('toleranceVal');
         const undoBtn = document.getElementById('undoBtn');
 
+        // Detail Editor Elements
+        const detailEditor = document.getElementById('detailEditor');
+        const detailCanvas = document.getElementById('detailCanvas');
+        const detailEditorIndex = document.getElementById('detailEditorIndex');
+        const toolMoveBtn = document.getElementById('toolMove');
+        const toolBrushBtn = document.getElementById('toolBrush');
+        const toolMagicWandBtn = document.getElementById('toolMagicWand');
+        const brushSizePanel = document.getElementById('brushSizePanel');
+        const brushModePanel = document.getElementById('brushModePanel');
+        const brushSizeSlider = document.getElementById('brushSizeSlider');
+        const brushSizeVal = document.getElementById('brushSizeVal');
+        const positionPanel = document.getElementById('positionPanel');
+        const posXDisplay = document.getElementById('posX');
+        const posYDisplay = document.getElementById('posY');
+        const centerBtn = document.getElementById('centerBtn');
+        const detailUndoBtn = document.getElementById('detailUndoBtn');
+        const detailRedoBtn = document.getElementById('detailRedoBtn');
+        const detailResetBtn = document.getElementById('detailResetBtn');
+        const prevImageBtn = document.getElementById('prevImageBtn');
+        const nextImageBtn = document.getElementById('nextImageBtn');
+        const closeEditorBtn = document.getElementById('closeEditorBtn');
+        const zoomBtns = document.querySelectorAll('.zoom-btn');
+        const centerGrid = document.getElementById('centerGrid');
+
         let originalImage = null;
         let history = []; // Undo history
         let ctx = null; // Editor canvas context
         let cellCheckStates = []; // Checkbox states for each grid cell
+
+        // Detail Editor State
+        let detailCtx = null;
+        let currentEditingIndex = -1;
+        let currentTool = 'magicWand'; // 'move', 'brush', 'magicWand'
+        let brushSize = 15;
+        let brushMode = 'erase'; // 'erase' or 'restore'
+        let currentZoom = 1;
+        let isPanning = false;
+        let panStart = { x: 0, y: 0 };
+        let isDragging = false;
+        let dragStart = { x: 0, y: 0 };
+        let dragStartImageData = null; // For move tool baking
+        let currentBgPattern = 'checker'; // Background pattern for detail editor
+
+        // Cell editor states: stores edited image data and position for each cell
+        let cellEditorStates = {};
 
         // Constants
         const SPECS = {
@@ -304,6 +574,13 @@
 
                     editorCanvas.classList.remove('hidden');
                     previewContainer.querySelector('p')?.remove();
+
+                    // Clear all cell editor states when new image is uploaded
+                    cellEditorStates = {};
+                    currentEditingIndex = -1;
+                    if (detailEditor && !detailEditor.classList.contains('hidden')) {
+                        closeDetailEditor();
+                    }
 
                     // Initial Auto Removal
                     if (autoRemoveBgCheckbox.checked) {
@@ -389,10 +666,8 @@
         }
 
         // Flood Fill Algorithm (Queue-based)
-        function floodFill(startX, startY, tolerance) {
-            const width = editorCanvas.width;
-            const height = editorCanvas.height;
-            const imageData = ctx.getImageData(0, 0, width, height);
+        function floodFill(startX, startY, tolerance, targetCtx = ctx, width = editorCanvas.width, height = editorCanvas.height) {
+            const imageData = targetCtx.getImageData(0, 0, width, height);
             const data = imageData.data;
 
             const startPos = (startY * width + startX) * 4;
@@ -436,7 +711,11 @@
                 }
             }
 
-            ctx.putImageData(imageData, 0, 0);
+            if (targetCtx === ctx) {
+                ctx.putImageData(imageData, 0, 0);
+            } else {
+                targetCtx.putImageData(imageData, 0, 0);
+            }
         }
 
         function updateGrid() {
@@ -479,30 +758,34 @@
 
             for (let i = 0; i < total; i++) {
                 const cell = document.createElement('div');
-                cell.className = 'border border-red-500/50 flex items-start justify-between p-2 text-red-600 font-bold text-xs bg-red-100/10 hover:bg-red-100/30 transition relative';
+                cell.className = 'group border border-red-500/50 flex flex-col items-start justify-between p-2 text-red-600 font-bold text-xs bg-red-100/10 hover:bg-red-100/30 transition relative overflow-hidden';
+                cell.style.cursor = 'pointer';
+                cell.style.pointerEvents = 'auto'; // Ensure it captures clicks
 
-                // Checkbox container
-                const checkboxContainer = document.createElement('div');
-                checkboxContainer.className = 'flex items-center gap-1 bg-white/90 rounded px-2 py-1 shadow-sm pointer-events-auto cursor-pointer';
-                checkboxContainer.onclick = (e) => {
-                    e.stopPropagation();
-                    toggleCellCheck(i);
-                };
+                // Single click: Open Detail Editor
+                cell.addEventListener('click', (e) => {
+                    openDetailEditor(i);
+                });
 
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.checked = cellCheckStates[i];
-                checkbox.className = 'w-5 h-5 text-green-600 rounded focus:ring-green-500 cursor-pointer pointer-events-none';
-                checkbox.id = `cell-check-${i}`;
-
-                const label = document.createElement('label');
-                label.htmlFor = `cell-check-${i}`;
+                // Number label (Top-Left)
+                const label = document.createElement('span');
                 label.innerText = i + 1;
-                label.className = 'cursor-pointer select-none pointer-events-none';
+                label.className = 'absolute top-0 left-0 bg-white/80 px-2 py-1 text-xs font-bold rounded-br pointer-events-none z-10';
+                cell.appendChild(label);
 
-                checkboxContainer.appendChild(checkbox);
-                checkboxContainer.appendChild(label);
-                cell.appendChild(checkboxContainer);
+                // Hover Overlay
+                const overlay = document.createElement('div');
+                overlay.className = 'absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition duration-200 pointer-events-none';
+                overlay.innerHTML = `
+                    <div class="bg-white/90 text-gray-800 px-3 py-2 rounded-full shadow-lg flex items-center gap-2 transform scale-90 group-hover:scale-100 transition">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                        <span class="font-bold text-sm">編集する</span>
+                    </div>
+                `;
+                cell.appendChild(overlay);
 
                 gridOverlay.appendChild(cell);
             }
@@ -591,25 +874,59 @@
                 const shouldAutoCenter = autoCenterCheckbox.checked;
 
                 let outputIndex = 1; // Counter for output file names
+                const stickerDataURLs = []; // Store sticker images for preview
 
                 for (let i = 0; i < totalCells; i++) {
-                    // Skip unchecked cells
-                    if (!cellCheckStates[i]) continue;
+                    // Always process all cells
+                    // if (!cellCheckStates[i]) continue;
 
-                    const c = i % cols;
-                    const r = Math.floor(i / cols);
+                    let rawCanvas;
+                    let srcX = 0, srcY = 0, srcW, srcH;
 
-                    // Cut cell
-                    const rawCanvas = document.createElement('canvas');
-                    rawCanvas.width = cellW;
-                    rawCanvas.height = cellH;
-                    const rawCtx = rawCanvas.getContext('2d');
-                    rawCtx.drawImage(processImage, c * cellW, r * cellH, cellW, cellH, 0, 0, cellW, cellH);
+                    // Check if cell was edited in detail editor
+                    if (cellEditorStates[i]) {
+                        // Use edited image from detail editor
+                        rawCanvas = document.createElement('canvas');
+                        rawCanvas.width = SPECS.sticker.w;
+                        rawCanvas.height = SPECS.sticker.h;
+                        const rawCtx = rawCanvas.getContext('2d');
+                        rawCtx.putImageData(cellEditorStates[i].imageData, 0, 0);
 
-                    // Determine Trim
-                    let srcX = 0, srcY = 0, srcW = cellW, srcH = cellH;
-                    if (shouldAutoCenter) {
-                        const bbox = getContentBoundingBox(rawCtx, cellW, cellH);
+                        // Apply position offset
+                        const posX = cellEditorStates[i].position.x;
+                        const posY = cellEditorStates[i].position.y;
+
+                        if (posX !== 0 || posY !== 0) {
+                            // Create temp canvas with position offset
+                            const tempCanvas = document.createElement('canvas');
+                            tempCanvas.width = SPECS.sticker.w;
+                            tempCanvas.height = SPECS.sticker.h;
+                            const tempCtx = tempCanvas.getContext('2d');
+                            tempCtx.drawImage(rawCanvas, posX, posY);
+                            rawCanvas = tempCanvas;
+                        }
+
+                        srcW = SPECS.sticker.w;
+                        srcH = SPECS.sticker.h;
+                    } else {
+                        // Original logic: extract from main canvas
+                        const c = i % cols;
+                        const r = Math.floor(i / cols);
+
+                        rawCanvas = document.createElement('canvas');
+                        rawCanvas.width = cellW;
+                        rawCanvas.height = cellH;
+                        const rawCtx = rawCanvas.getContext('2d');
+                        rawCtx.drawImage(processImage, c * cellW, r * cellH, cellW, cellH, 0, 0, cellW, cellH);
+
+                        srcW = cellW;
+                        srcH = cellH;
+                    }
+
+                    // Determine Trim (only if auto-center is enabled and not from detail editor)
+                    if (shouldAutoCenter && !cellEditorStates[i]) {
+                        const rawCtx = rawCanvas.getContext('2d');
+                        const bbox = getContentBoundingBox(rawCtx, srcW, srcH);
                         if (bbox) {
                             srcX = bbox.x; srcY = bbox.y; srcW = bbox.w; srcH = bbox.h;
                         }
@@ -630,9 +947,20 @@
                     const stickerCanvas = document.createElement('canvas');
                     stickerCanvas.width = SPECS.sticker.w;
                     stickerCanvas.height = SPECS.sticker.h;
-                    drawCentered(stickerCanvas, SPECS.sticker.w, SPECS.sticker.h, SPECS.sticker.margin);
+
+                    // If from detail editor, draw directly without centering
+                    if (cellEditorStates[i]) {
+                        const stickerCtx = stickerCanvas.getContext('2d');
+                        stickerCtx.drawImage(rawCanvas, 0, 0);
+                    } else {
+                        drawCentered(stickerCanvas, SPECS.sticker.w, SPECS.sticker.h, SPECS.sticker.margin);
+                    }
+
                     const fileName = `${outputIndex.toString().padStart(2, '0')}.png`;
                     zip.file(fileName, await new Promise(r => stickerCanvas.toBlob(r)));
+
+                    // Store sticker for preview
+                    stickerDataURLs.push(stickerCanvas.toDataURL());
 
                     // Main/Tab
                     if (i === selectedMainIndex) {
@@ -661,6 +989,10 @@
                 document.body.removeChild(link);
 
                 statusMsg.innerText = "完了しました！";
+
+                // Show LINE Preview with stickers
+                showLinePreview(stickerDataURLs);
+
                 setTimeout(() => {
                     statusContainer.classList.add('hidden');
                     statusContainer.style.display = 'none';
@@ -674,6 +1006,628 @@
                 statusMsg.className = "text-sm font-bold text-red-600";
                 generateBtn.classList.remove('hidden');
             }
+        }
+
+        // ===== DETAIL EDITOR FUNCTIONS =====
+
+        function openDetailEditor(index) {
+            currentEditingIndex = index;
+            detailEditorIndex.innerText = index + 1;
+
+            // Initialize cell state if not exists
+            if (!cellEditorStates[index]) {
+                const cols = parseInt(colInput.value);
+                const rows = parseInt(rowInput.value);
+                const c = index % cols;
+                const r = Math.floor(index / cols);
+                const cellW = editorCanvas.width / cols;
+                const cellH = editorCanvas.height / rows;
+
+                // Extract from ORIGINAL image (before transparency)
+                const originalCanvas = document.createElement('canvas');
+                originalCanvas.width = SPECS.sticker.w;
+                originalCanvas.height = SPECS.sticker.h;
+                const originalCtx = originalCanvas.getContext('2d', { willReadFrequently: true });
+                originalCtx.drawImage(originalImage, c * cellW, r * cellH, cellW, cellH, 0, 0, SPECS.sticker.w, SPECS.sticker.h);
+
+                // Extract from edited canvas (after transparency)
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = SPECS.sticker.w;
+                tempCanvas.height = SPECS.sticker.h;
+                const tempCtx = tempCanvas.getContext('2d', { willReadFrequently: true });
+                tempCtx.drawImage(editorCanvas, c * cellW, r * cellH, cellW, cellH, 0, 0, SPECS.sticker.w, SPECS.sticker.h);
+
+                cellEditorStates[index] = {
+                    imageData: tempCtx.getImageData(0, 0, SPECS.sticker.w, SPECS.sticker.h),
+                    originalImageData: originalCtx.getImageData(0, 0, SPECS.sticker.w, SPECS.sticker.h), // NEW
+                    position: { x: 0, y: 0 },
+                    history: [],
+                    historyIndex: -1
+                };
+            }
+
+            // Setup detail canvas
+            detailCanvas.width = SPECS.sticker.w;
+            detailCanvas.height = SPECS.sticker.h;
+            detailCtx = detailCanvas.getContext('2d', { willReadFrequently: true });
+            detailCtx.putImageData(cellEditorStates[index].imageData, 0, 0);
+
+            // Save initial state to history
+            if (cellEditorStates[index].history.length === 0) {
+                saveDetailHistory();
+            }
+
+            // Show editor
+            detailEditor.classList.remove('hidden');
+            detailEditor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            // Auto-fit Logic
+            const container = detailEditor.querySelector('.canvas-container');
+            const containerW = container.clientWidth;
+            const containerH = container.clientHeight;
+
+            // Calculate scale to fit with some padding
+            const padding = 40;
+            const scaleX = (containerW - padding) / SPECS.sticker.w;
+            const scaleY = (containerH - padding) / SPECS.sticker.h;
+            const fitScale = Math.min(scaleX, scaleY, 4); // Max zoom 4x initially
+
+            // Apply fit scale
+            setZoom(fitScale); // This sets currentZoom and transform
+
+            // Center the canvas wrapper
+            // Since transform-origin is center center, we just need to ensure the wrapper is centered in the flex container
+            // The flex container (canvas-container) already does this with justify-center items-center
+
+            // However, we need to make sure the canvas wrapper has the correct size for the transform
+            // Actually, we are transforming detailCanvas directly. 
+            // Let's reset position to 0,0 for centering
+            // And ensure the canvas is positioned relatively or absolutely correctly.
+            // In the HTML update, I set detailCanvas to absolute.
+            // With flex center, it should be centered.
+
+            // Update UI
+            updateDetailEditorUI();
+            updateNavigationButtons();
+
+            // Only set default tool on first use
+            if (!currentTool) {
+                switchTool('magicWand');
+            } else {
+                // Keep current tool but update UI
+                updateDetailEditorUI();
+            }
+        }
+
+        function closeDetailEditor() {
+            detailEditor.classList.add('hidden');
+            currentEditingIndex = -1;
+
+            // Update main grid with edited images
+            updateGrid();
+        }
+
+        function saveDetailHistory() {
+            if (currentEditingIndex === -1) return;
+
+            const state = cellEditorStates[currentEditingIndex];
+            // Remove future history if we're not at the end
+            if (state.historyIndex < state.history.length - 1) {
+                state.history = state.history.slice(0, state.historyIndex + 1);
+            }
+
+            // Add new state
+            const imageData = detailCtx.getImageData(0, 0, detailCanvas.width, detailCanvas.height);
+            state.history.push({
+                imageData: imageData,
+                position: { ...state.position }
+            });
+            state.historyIndex = state.history.length - 1;
+
+            // Limit history to 20
+            if (state.history.length > 20) {
+                state.history.shift();
+                state.historyIndex--;
+            }
+
+            updateDetailHistoryButtons();
+        }
+
+        function detailUndo() {
+            if (currentEditingIndex === -1) return;
+            const state = cellEditorStates[currentEditingIndex];
+
+            if (state.historyIndex > 0) {
+                state.historyIndex--;
+                const historyState = state.history[state.historyIndex];
+                detailCtx.putImageData(historyState.imageData, 0, 0);
+                state.position = { ...historyState.position };
+                state.imageData = detailCtx.getImageData(0, 0, detailCanvas.width, detailCanvas.height);
+                updateDetailHistoryButtons();
+                updatePositionDisplay();
+            }
+        }
+
+        function detailRedo() {
+            if (currentEditingIndex === -1) return;
+            const state = cellEditorStates[currentEditingIndex];
+
+            if (state.historyIndex < state.history.length - 1) {
+                state.historyIndex++;
+                const historyState = state.history[state.historyIndex];
+                detailCtx.putImageData(historyState.imageData, 0, 0);
+                state.position = { ...historyState.position };
+                state.imageData = detailCtx.getImageData(0, 0, detailCanvas.width, detailCanvas.height);
+                updateDetailHistoryButtons();
+                updatePositionDisplay();
+            }
+        }
+
+        function detailReset() {
+            if (currentEditingIndex === -1) return;
+            if (!confirm('すべての編集をリセットしますか？')) return;
+
+            // Re-extract from main canvas
+            const cols = parseInt(colInput.value);
+            const rows = parseInt(rowInput.value);
+            const c = currentEditingIndex % cols;
+            const r = Math.floor(currentEditingIndex / cols);
+            const cellW = editorCanvas.width / cols;
+            const cellH = editorCanvas.height / rows;
+
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = SPECS.sticker.w;
+            tempCanvas.height = SPECS.sticker.h;
+            const tempCtx = tempCanvas.getContext('2d', { willReadFrequently: true });
+            tempCtx.drawImage(editorCanvas, c * cellW, r * cellH, cellW, cellH, 0, 0, SPECS.sticker.w, SPECS.sticker.h);
+
+            cellEditorStates[currentEditingIndex] = {
+                imageData: tempCtx.getImageData(0, 0, SPECS.sticker.w, SPECS.sticker.h),
+                position: { x: 0, y: 0 },
+                history: [],
+                historyIndex: -1
+            };
+
+            detailCtx.putImageData(cellEditorStates[currentEditingIndex].imageData, 0, 0);
+            saveDetailHistory();
+            updateDetailHistoryButtons();
+            updatePositionDisplay();
+        }
+
+        function updateDetailHistoryButtons() {
+            if (currentEditingIndex === -1) return;
+            const state = cellEditorStates[currentEditingIndex];
+            detailUndoBtn.disabled = state.historyIndex <= 0;
+            detailRedoBtn.disabled = state.historyIndex >= state.history.length - 1;
+        }
+
+        function updateNavigationButtons() {
+            const cols = parseInt(colInput.value);
+            const rows = parseInt(rowInput.value);
+            const total = cols * rows;
+
+            // Find previous checked cell
+            let prevIndex = -1;
+            for (let i = currentEditingIndex - 1; i >= 0; i--) {
+                if (cellCheckStates[i]) {
+                    prevIndex = i;
+                    break;
+                }
+            }
+
+            // Find next checked cell
+            let nextIndex = -1;
+            for (let i = currentEditingIndex + 1; i < total; i++) {
+                if (cellCheckStates[i]) {
+                    nextIndex = i;
+                    break;
+                }
+            }
+
+            prevImageBtn.disabled = prevIndex === -1;
+            nextImageBtn.disabled = nextIndex === -1;
+        }
+
+        function navigateToPrev() {
+            const cols = parseInt(colInput.value);
+
+            for (let i = currentEditingIndex - 1; i >= 0; i--) {
+                if (cellCheckStates[i]) {
+                    // Save current state
+                    if (currentEditingIndex !== -1) {
+                        cellEditorStates[currentEditingIndex].imageData = detailCtx.getImageData(0, 0, detailCanvas.width, detailCanvas.height);
+                    }
+                    openDetailEditor(i);
+                    return;
+                }
+            }
+        }
+
+        function navigateToNext() {
+            const cols = parseInt(colInput.value);
+            const rows = parseInt(rowInput.value);
+            const total = cols * rows;
+
+            for (let i = currentEditingIndex + 1; i < total; i++) {
+                if (cellCheckStates[i]) {
+                    // Save current state
+                    if (currentEditingIndex !== -1) {
+                        cellEditorStates[currentEditingIndex].imageData = detailCtx.getImageData(0, 0, detailCanvas.width, detailCanvas.height);
+                    }
+                    openDetailEditor(i);
+                    return;
+                }
+            }
+        }
+
+        function switchTool(tool) {
+            currentTool = tool;
+            updateDetailEditorUI();
+        }
+
+        function updateDetailEditorUI() {
+            // Update tool buttons
+            if (currentTool === 'move') {
+                toolMoveBtn.classList.add('border-green-500');
+                toolMoveBtn.classList.remove('border-gray-300');
+                toolBrushBtn.classList.remove('border-green-500');
+                toolBrushBtn.classList.add('border-gray-300');
+                toolMagicWandBtn.classList.remove('border-green-500');
+                toolMagicWandBtn.classList.add('border-gray-300');
+                brushSizePanel.classList.add('hidden');
+                brushModePanel.classList.add('hidden');
+                positionPanel.classList.remove('hidden');
+                detailCanvas.style.cursor = 'move';
+            } else if (currentTool === 'brush') {
+                toolBrushBtn.classList.add('border-green-500');
+                toolBrushBtn.classList.remove('border-gray-300');
+                toolMoveBtn.classList.remove('border-green-500');
+                toolMoveBtn.classList.add('border-gray-300');
+                toolMagicWandBtn.classList.remove('border-green-500');
+                toolMagicWandBtn.classList.add('border-gray-300');
+                brushSizePanel.classList.remove('hidden');
+                brushModePanel.classList.remove('hidden');
+                positionPanel.classList.add('hidden');
+                updateBrushCursor();
+            } else if (currentTool === 'magicWand') {
+                toolMagicWandBtn.classList.add('border-green-500');
+                toolMagicWandBtn.classList.remove('border-gray-300');
+                toolBrushBtn.classList.remove('border-green-500');
+                toolBrushBtn.classList.add('border-gray-300');
+                toolMoveBtn.classList.remove('border-green-500');
+                toolMoveBtn.classList.add('border-gray-300');
+                brushSizePanel.classList.add('hidden');
+                brushModePanel.classList.add('hidden');
+                positionPanel.classList.add('hidden');
+                detailCanvas.style.cursor = 'crosshair';
+            }
+
+            updatePositionDisplay();
+            updateDetailHistoryButtons();
+
+            // Show/Hide Center Grid
+            if (currentTool === 'move') {
+                centerGrid.classList.remove('hidden');
+            } else {
+                centerGrid.classList.add('hidden');
+            }
+        }
+
+        function updatePositionDisplay() {
+            if (currentEditingIndex === -1) return;
+            const state = cellEditorStates[currentEditingIndex];
+            posXDisplay.innerText = Math.round(state.position.x);
+            posYDisplay.innerText = Math.round(state.position.y);
+        }
+
+        function centerPosition() {
+            if (currentEditingIndex === -1) return;
+            const state = cellEditorStates[currentEditingIndex];
+            state.position = { x: 0, y: 0 };
+            updatePositionDisplay();
+            saveDetailHistory();
+        }
+
+        function setZoom(zoom) {
+            currentZoom = zoom;
+
+            // Update zoom buttons
+            zoomBtns.forEach(btn => {
+                if (parseInt(btn.dataset.zoom) === zoom) {
+                    btn.classList.add('border-green-500');
+                    btn.classList.remove('border-gray-300');
+                } else {
+                    btn.classList.remove('border-green-500');
+                    btn.classList.add('border-gray-300');
+                }
+            });
+
+            // Apply zoom transform
+            detailCanvas.style.transform = `scale(${zoom})`;
+            detailCanvas.style.transformOrigin = 'center center';
+        }
+
+        function setBackgroundPattern(pattern) {
+            currentBgPattern = pattern;
+            const container = document.querySelector('#detailEditor .canvas-container');
+
+            // Update button states
+            document.querySelectorAll('.bg-pattern-btn').forEach(btn => {
+                if (btn.dataset.pattern === pattern) {
+                    btn.classList.add('border-green-500');
+                    btn.classList.remove('border-gray-300');
+                } else {
+                    btn.classList.remove('border-green-500');
+                    btn.classList.add('border-gray-300');
+                }
+            });
+
+            switch (pattern) {
+                case 'checker':
+                    // Better checkerboard pattern (16x16px)
+                    const checkerSvg = `data:image/svg+xml,${encodeURIComponent(
+                        '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><rect width="16" height="16" fill="#e0e0e0"/><rect x="16" y="16" width="16" height="16" fill="#e0e0e0"/><rect x="16" width="16" height="16" fill="#f5f5f5"/><rect y="16" width="16" height="16" fill="#f5f5f5"/></svg>'
+                    )}`;
+                    container.style.background = `url("${checkerSvg}") repeat`;
+                    break;
+                case 'dark':
+                    container.style.background = '#2a2a2a';
+                    break;
+                case 'white':
+                    container.style.background = '#ffffff';
+                    break;
+                case 'none':
+                    container.style.background = 'transparent';
+                    break;
+            }
+        }
+
+        function updateBrushCursor() {
+            // Create dynamic circular cursor based on brush size
+            const size = Math.max(16, Math.min(brushSize * 2, 64)); // Clamp size for visibility
+            const cursorSvg = `data:image/svg+xml,${encodeURIComponent(
+                `<svg xmlns='http://www.w3.org/2000/svg' width='${size}' height='${size}' viewBox='0 0 ${size} ${size}'><circle cx='${size / 2}' cy='${size / 2}' r='${size / 2 - 1}' stroke='black' stroke-width='2' fill='none'/><circle cx='${size / 2}' cy='${size / 2}' r='${size / 2 - 1}' stroke='white' stroke-width='1' fill='none'/></svg>`
+            )}`;
+            detailCanvas.style.cursor = `url("${cursorSvg}") ${size / 2} ${size / 2}, crosshair`;
+        }
+
+        // Event Listeners for Detail Editor
+        toolMoveBtn?.addEventListener('click', () => switchTool('move'));
+        toolBrushBtn?.addEventListener('click', () => switchTool('brush'));
+        toolMagicWandBtn?.addEventListener('click', () => switchTool('magicWand'));
+
+        brushSizeSlider?.addEventListener('input', (e) => {
+            brushSize = parseInt(e.target.value);
+            brushSizeVal.innerText = brushSize;
+            // Update cursor if brush tool is active
+            if (currentTool === 'brush') {
+                updateBrushCursor();
+            }
+        });
+
+        document.querySelectorAll('input[name="brushMode"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                brushMode = e.target.value;
+            });
+        });
+
+        zoomBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                setZoom(parseInt(btn.dataset.zoom));
+            });
+        });
+
+        // Background pattern buttons
+        document.querySelectorAll('.bg-pattern-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                setBackgroundPattern(btn.dataset.pattern);
+            });
+        });
+
+        centerBtn?.addEventListener('click', centerPosition);
+        detailUndoBtn?.addEventListener('click', detailUndo);
+        detailRedoBtn?.addEventListener('click', detailRedo);
+        detailResetBtn?.addEventListener('click', detailReset);
+        prevImageBtn?.addEventListener('click', navigateToPrev);
+        nextImageBtn?.addEventListener('click', navigateToNext);
+        closeEditorBtn?.addEventListener('click', () => {
+            // Save current state before closing
+            if (currentEditingIndex !== -1) {
+                cellEditorStates[currentEditingIndex].imageData = detailCtx.getImageData(0, 0, detailCanvas.width, detailCanvas.height);
+            }
+            closeDetailEditor();
+        });
+
+        // Robust coordinate calculation helper
+        function getCanvasCoordinates(e, canvas) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            return {
+                x: (e.clientX - rect.left) * scaleX,
+                y: (e.clientY - rect.top) * scaleY
+            };
+        }
+
+        // Canvas interaction for detail editor
+        detailCanvas?.addEventListener('mousedown', (e) => {
+            const coords = getCanvasCoordinates(e, detailCanvas);
+            const x = coords.x;
+            const y = coords.y;
+
+            if (currentTool === 'move') {
+                isDragging = true;
+                dragStart = { x: x, y: y };
+                // Capture current image data for baking
+                dragStartImageData = detailCtx.getImageData(0, 0, detailCanvas.width, detailCanvas.height);
+            } else if (currentTool === 'brush') {
+                applyBrush(x, y);
+                isDragging = true;
+            } else if (currentTool === 'magicWand') {
+                const tolerance = parseInt(toleranceRange.value);
+                floodFill(Math.floor(x), Math.floor(y), tolerance, detailCtx, detailCanvas.width, detailCanvas.height);
+                saveDetailHistory();
+            }
+        });
+
+
+
+        detailCanvas?.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+
+            const coords = getCanvasCoordinates(e, detailCanvas);
+            const x = coords.x;
+            const y = coords.y;
+
+            if (currentTool === 'move') {
+                // Destructive Move (Baking)
+                const dx = x - dragStart.x;
+                const dy = y - dragStart.y;
+
+                // Clear and redraw at new position
+                detailCtx.clearRect(0, 0, detailCanvas.width, detailCanvas.height);
+                detailCtx.putImageData(dragStartImageData, dx, dy);
+
+                // Update position display (relative to start)
+                // Note: This is just for display, the actual pixels are moving
+                // We could track total offset if we wanted, but for now just showing delta might be confusing
+                // Let's just update X/Y if we were tracking absolute position, but here we are baking.
+                // Maybe show delta?
+                posXDisplay.innerText = Math.round(dx);
+                posYDisplay.innerText = Math.round(dy);
+
+            } else if (currentTool === 'brush') {
+                applyBrush(x, y);
+            }
+        });
+
+        detailCanvas?.addEventListener('mouseup', () => {
+            if (isDragging && currentEditingIndex !== -1) {
+                if (currentTool === 'move') {
+                    // Save the baked change
+                    saveDetailHistory();
+                    // Reset drag state
+                    dragStartImageData = null;
+                } else {
+                    saveDetailHistory();
+                }
+            }
+            isDragging = false;
+        });
+
+        detailCanvas?.addEventListener('mouseleave', () => {
+            if (isDragging && currentEditingIndex !== -1) {
+                if (currentTool === 'move') {
+                    // Save the baked change
+                    saveDetailHistory();
+                    // Reset drag state
+                    dragStartImageData = null;
+                } else {
+                    saveDetailHistory();
+                }
+            }
+            isDragging = false;
+        });
+
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            if (detailEditor.classList.contains('hidden')) return;
+
+            // Tool shortcuts
+            if (e.key === 'v' || e.key === 'V') {
+                switchTool('move');
+                e.preventDefault();
+            } else if (e.key === 'b' || e.key === 'B') {
+                switchTool('brush');
+                e.preventDefault();
+            } else if (e.key === 'w' || e.key === 'W') {
+                switchTool('magicWand');
+                e.preventDefault();
+            }
+
+            // Undo/Redo shortcuts
+            if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+                detailUndo();
+                e.preventDefault();
+            } else if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+                detailRedo();
+                e.preventDefault();
+            }
+
+            // Arrow key movement (only in move tool)
+            if (currentTool === 'move' && currentEditingIndex !== -1) {
+                const state = cellEditorStates[currentEditingIndex];
+                const step = e.shiftKey ? 10 : 1;
+                let moved = false;
+
+                if (e.key === 'ArrowLeft') {
+                    state.position.x -= step;
+                    moved = true;
+                } else if (e.key === 'ArrowRight') {
+                    state.position.x += step;
+                    moved = true;
+                } else if (e.key === 'ArrowUp') {
+                    state.position.y -= step;
+                    moved = true;
+                } else if (e.key === 'ArrowDown') {
+                    state.position.y += step;
+                    moved = true;
+                }
+
+                if (moved) {
+                    updatePositionDisplay();
+                    e.preventDefault();
+                }
+            }
+        });
+
+        // Release arrow keys to save history
+        document.addEventListener('keyup', (e) => {
+            if (detailEditor.classList.contains('hidden')) return;
+            if (currentTool === 'move' && currentEditingIndex !== -1) {
+                if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
+                    saveDetailHistory();
+                }
+            }
+        });
+
+        function applyBrush(x, y) {
+            if (!detailCtx || currentEditingIndex === -1) return;
+
+            const imageData = detailCtx.getImageData(0, 0, detailCanvas.width, detailCanvas.height);
+            const data = imageData.data;
+
+            // Circular brush
+            for (let dy = -brushSize; dy <= brushSize; dy++) {
+                for (let dx = -brushSize; dx <= brushSize; dx++) {
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist > brushSize) continue;
+
+                    const px = Math.floor(x + dx);
+                    const py = Math.floor(y + dy);
+
+                    if (px < 0 || px >= detailCanvas.width || py < 0 || py >= detailCanvas.height) continue;
+
+                    const idx = (py * detailCanvas.width + px) * 4;
+
+                    if (brushMode === 'erase') {
+                        data[idx + 3] = 0; // Set alpha to 0
+                    } else if (brushMode === 'restore') {
+                        // Restore from ORIGINAL image data
+                        const state = cellEditorStates[currentEditingIndex];
+                        if (state.originalImageData) {
+                            const originalData = state.originalImageData.data;
+                            data[idx] = originalData[idx];
+                            data[idx + 1] = originalData[idx + 1];
+                            data[idx + 2] = originalData[idx + 2];
+                            data[idx + 3] = originalData[idx + 3];
+                        }
+                    }
+                }
+            }
+
+            detailCtx.putImageData(imageData, 0, 0);
+            cellEditorStates[currentEditingIndex].imageData = imageData;
         }
 
         function downloadTemplate() {
@@ -710,6 +1664,126 @@
                 link.click();
             });
         }
+
+        // ===== LINE PREVIEW FUNCTIONS =====
+
+        let currentPreviewBg = 'dark'; // Default background
+
+        function showLinePreview(stickerDataURLs) {
+            const linePreview = document.getElementById('linePreview');
+            const chatMessages = document.getElementById('chatMessages');
+
+            // Clear previous messages
+            chatMessages.innerHTML = '';
+
+            // Create sample chat messages with stickers
+            const messages = [
+                { type: 'text', content: 'Hello', isUser: true },
+            ];
+
+            // Add stickers (show up to 5 for preview)
+            const stickersToShow = stickerDataURLs.slice(0, Math.min(5, stickerDataURLs.length));
+            stickersToShow.forEach((stickerURL, index) => {
+                messages.push({ type: 'sticker', content: stickerURL, isUser: index % 2 === 0 });
+            });
+
+            // Render messages
+            messages.forEach(msg => {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `flex ${msg.isUser ? 'justify-start' : 'justify-end'}`;
+
+                if (msg.type === 'text') {
+                    const bubble = document.createElement('div');
+                    bubble.className = `px-3 py-2 rounded-2xl max-w-xs ${msg.isUser
+                            ? 'bg-white text-gray-800'
+                            : 'bg-green-500 text-white'
+                        }`;
+                    bubble.textContent = msg.content;
+
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'flex items-end gap-2';
+
+                    if (msg.isUser) {
+                        // Add avatar
+                        const avatar = document.createElement('div');
+                        avatar.className = 'w-10 h-10 rounded-full bg-green-500 flex-shrink-0 flex items-center justify-center';
+                        avatar.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg>`;
+                        wrapper.appendChild(avatar);
+                    }
+
+                    wrapper.appendChild(bubble);
+                    messageDiv.appendChild(wrapper);
+                } else if (msg.type === 'sticker') {
+                    const stickerImg = document.createElement('img');
+                    stickerImg.src = msg.content;
+                    stickerImg.className = 'max-w-[150px] max-h-[150px]';
+                    stickerImg.style.imageRendering = 'crisp-edges';
+
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'flex items-end gap-2';
+
+                    if (msg.isUser) {
+                        // Add avatar
+                        const avatar = document.createElement('div');
+                        avatar.className = 'w-10 h-10 rounded-full bg-green-500 flex-shrink-0 flex items-center justify-center';
+                        avatar.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg>`;
+                        wrapper.appendChild(avatar);
+                    }
+
+                    wrapper.appendChild(stickerImg);
+                    messageDiv.appendChild(wrapper);
+                }
+
+                chatMessages.appendChild(messageDiv);
+            });
+
+            // Show preview section
+            linePreview.classList.remove('hidden');
+            linePreview.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+            // Set default background
+            setPreviewBackground('dark');
+        }
+
+        function setPreviewBackground(bg) {
+            currentPreviewBg = bg;
+            const chatContainer = document.getElementById('chatContainer');
+            const chatMessages = document.getElementById('chatMessages');
+
+            // Update button states
+            document.querySelectorAll('.preview-bg-btn').forEach(btn => {
+                if (btn.dataset.bg === bg) {
+                    btn.classList.add('border-green-500');
+                    btn.classList.remove('border-gray-300');
+                } else {
+                    btn.classList.remove('border-green-500');
+                    btn.classList.add('border-gray-300');
+                }
+            });
+
+            // Apply background styles
+            switch (bg) {
+                case 'light':
+                    chatContainer.style.background = '#ffffff';
+                    chatMessages.style.background = '#ffffff';
+                    break;
+                case 'normal':
+                    chatContainer.style.background = '#8fb4d8';
+                    chatMessages.style.background = '#8fb4d8';
+                    break;
+                case 'dark':
+                    chatContainer.style.background = '#1a1a1a';
+                    chatMessages.style.background = '#1a1a1a';
+                    break;
+            }
+        }
+
+        // Event listeners for preview background buttons
+        document.querySelectorAll('.preview-bg-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                setPreviewBackground(btn.dataset.bg);
+            });
+        });
     </script>
 </body>
 
