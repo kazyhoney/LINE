@@ -1545,694 +1545,697 @@
             state.position = { x: 0, y: 0 };
             updatePositionDisplay();
             redrawCanvas(currentEditingIndex);
-            function setZoom(zoom) {
-                currentZoom = zoom;
+            saveDetailHistory();
+        }
 
-                // Update slider if needed (e.g. when called programmatically)
-                const zoomSlider = document.getElementById('zoomSlider');
-                const zoomValue = document.getElementById('zoomValue');
-                if (zoomSlider && zoomValue) {
-                    zoomSlider.value = Math.round(zoom * 100);
-                    zoomValue.textContent = `${Math.round(zoom * 100)}%`;
-                }
+        function setZoom(zoom) {
+            currentZoom = zoom;
 
-                // Apply zoom transform
-                detailCanvas.style.transform = `scale(${zoom})`;
-                detailCanvas.style.transformOrigin = 'center center';
-
-                // Apply to wrapper as well
-                const wrapper = document.getElementById('detailCanvasWrapper');
-                if (wrapper) {
-                    wrapper.style.transform = `scale(${zoom})`;
-                    wrapper.style.transformOrigin = 'center center';
-                }
-            }
-
-            // --- Hand Tool & Pan Logic ---
-            const handToolBtn = document.getElementById('handToolBtn');
-            let isHandToolActive = false;
-            // isPanning is already declared globally
-            let startPanX = 0;
-            let startPanY = 0;
-            let scrollStartX = 0;
-            let scrollStartY = 0;
-
-            if (handToolBtn) {
-                handToolBtn.addEventListener('click', () => {
-                    isHandToolActive = !isHandToolActive;
-                    updateHandToolUI();
-                });
-            }
-
-            function updateHandToolUI() {
-                if (isHandToolActive) {
-                    handToolBtn.classList.add('bg-green-100', 'text-green-600', 'border-green-500');
-                    detailCanvas.style.cursor = 'grab';
-                } else {
-                    handToolBtn.classList.remove('bg-green-100', 'text-green-600', 'border-green-500');
-                    updateCursor(); // Restore tool cursor
-                }
-            }
-
-            function updateCursor() {
-                if (isHandToolActive) {
-                    detailCanvas.style.cursor = 'grab';
-                } else if (currentTool === 'move') {
-                    detailCanvas.style.cursor = 'move';
-                } else if (currentTool === 'brush') {
-                    updateBrushCursor();
-                } else if (currentTool === 'magicWand') {
-                    detailCanvas.style.cursor = 'crosshair';
-                }
-            }
-
-            const detailContainer = detailEditor.querySelector('.canvas-container');
-
-            detailContainer.addEventListener('mousedown', (e) => {
-                if (isHandToolActive) {
-                    isPanning = true;
-                    detailCanvas.style.cursor = 'grabbing';
-                    startPanX = e.clientX;
-                    startPanY = e.clientY;
-                    scrollStartX = detailContainer.scrollLeft;
-                    scrollStartY = detailContainer.scrollTop;
-                    e.preventDefault(); // Prevent text selection
-                }
-            });
-
-            window.addEventListener('mousemove', (e) => {
-                if (isPanning && isHandToolActive) {
-                    const dx = e.clientX - startPanX;
-                    const dy = e.clientY - startPanY;
-                    detailContainer.scrollLeft = scrollStartX - dx;
-                    detailContainer.scrollTop = scrollStartY - dy;
-                }
-            });
-
-            window.addEventListener('mouseup', () => {
-                if (isPanning) {
-                    isPanning = false;
-                    if (isHandToolActive) detailCanvas.style.cursor = 'grab';
-                }
-            });
-
-            // --- Background Pattern Persistence ---
-            // currentBgPattern is already declared globally
-
-            function setBackgroundPattern(pattern) {
-                currentBgPattern = pattern; // Update current pattern
-
-                // Update buttons UI
-                document.querySelectorAll('.bg-pattern-btn').forEach(btn => {
-                    if (btn.dataset.pattern === pattern) {
-                        btn.classList.add('border-green-500');
-                        btn.classList.remove('border-gray-300');
-                    } else {
-                        btn.classList.remove('border-green-500');
-                        btn.classList.add('border-gray-300');
-                    }
-                });
-
-                // Update canvas background
-                const wrapper = document.getElementById('detailCanvasWrapper');
-                wrapper.className = 'relative'; // Reset
-
-                if (pattern === 'transparent') {
-                    wrapper.style.backgroundImage = 'linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)';
-                    wrapper.style.backgroundSize = '20px 20px';
-                    wrapper.style.backgroundPosition = '0 0, 0 10px, 10px -10px, -10px 0px';
-                    wrapper.style.backgroundColor = 'white';
-                } else if (pattern === 'dark') {
-                    // Dark checkerboard
-                    wrapper.style.backgroundImage = 'linear-gradient(45deg, #333 25%, transparent 25%), linear-gradient(-45deg, #333 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #333 75%), linear-gradient(-45deg, transparent 75%, #333 75%)';
-                    wrapper.style.backgroundSize = '20px 20px';
-                    wrapper.style.backgroundPosition = '0 0, 0 10px, 10px -10px, -10px 0px';
-                    wrapper.style.backgroundColor = '#1a1a1a';
-                } else if (pattern === 'normal') {
-                    wrapper.style.background = '#8fb4d8'; // LINE default blue
-                    wrapper.style.backgroundImage = 'none';
-                }
-            }
-
-            function updateBrushCursor() {
-                // Create dynamic circular cursor based on brush size
-                const size = Math.max(16, Math.min(brushSize * 2, 64)); // Clamp size for visibility
-                const cursorSvg = `data:image/svg+xml,${encodeURIComponent(
-                    `<svg xmlns='http://www.w3.org/2000/svg' width='${size}' height='${size}' viewBox='0 0 ${size} ${size}'><circle cx='${size / 2}' cy='${size / 2}' r='${size / 2 - 1}' stroke='black' stroke-width='2' fill='none'/><circle cx='${size / 2}' cy='${size / 2}' r='${size / 2 - 1}' stroke='white' stroke-width='1' fill='none'/></svg>`
-                )}`;
-                detailCanvas.style.cursor = `url("${cursorSvg}") ${size / 2} ${size / 2}, crosshair`;
-            }
-
-            // Event Listeners for Detail Editor
-            toolMoveBtn?.addEventListener('click', () => switchTool('move'));
-            toolBrushBtn?.addEventListener('click', () => switchTool('brush'));
-            toolMagicWandBtn?.addEventListener('click', () => switchTool('magicWand'));
-
-            brushSizeSlider?.addEventListener('input', (e) => {
-                brushSize = parseInt(e.target.value);
-                brushSizeVal.innerText = brushSize;
-                // Update cursor if brush tool is active
-                if (currentTool === 'brush') {
-                    updateBrushCursor();
-                }
-            });
-
-            document.querySelectorAll('input[name="brushMode"]').forEach(radio => {
-                radio.addEventListener('change', (e) => {
-                    brushMode = e.target.value;
-                });
-            });
-
-            // Zoom Slider
+            // Update slider if needed (e.g. when called programmatically)
             const zoomSlider = document.getElementById('zoomSlider');
-            if (zoomSlider) {
-                zoomSlider.addEventListener('input', (e) => {
-                    const zoom = parseInt(e.target.value) / 100;
-                    setZoom(zoom);
-                });
+            const zoomValue = document.getElementById('zoomValue');
+            if (zoomSlider && zoomValue) {
+                zoomSlider.value = Math.round(zoom * 100);
+                zoomValue.textContent = `${Math.round(zoom * 100)}%`;
             }
 
-            // Trackpad Panning (Wheel event)
-            detailContainer.addEventListener('wheel', (e) => {
-                // If zooming with Ctrl key (pinch to zoom), let default happen or handle custom zoom?
-                // User asked for "move with two fingers", which is standard scroll on trackpad.
-                // Since overflow is hidden, we handle scroll manually.
+            // Apply zoom transform
+            detailCanvas.style.transform = `scale(${zoom})`;
+            detailCanvas.style.transformOrigin = 'center center';
 
-                if (e.ctrlKey) {
-                    // Optional: Handle pinch to zoom here if needed, but user didn't explicitly ask for it.
-                    // For now, prevent default to avoid browser zoom.
-                    e.preventDefault();
-                    const delta = -e.deltaY;
-                    const step = 0.1;
-                    let newZoom = currentZoom + (delta > 0 ? step : -step);
-                    newZoom = Math.max(1, Math.min(5, newZoom)); // 100% to 500%
-                    setZoom(newZoom);
-                } else {
-                    // Pan
-                    e.preventDefault();
-                    detailContainer.scrollLeft += e.deltaX;
-                    detailContainer.scrollTop += e.deltaY;
-                }
-            }, { passive: false });
+            // Apply to wrapper as well
+            const wrapper = document.getElementById('detailCanvasWrapper');
+            if (wrapper) {
+                wrapper.style.transform = `scale(${zoom})`;
+                wrapper.style.transformOrigin = 'center center';
+            }
+        }
 
-            // Background Pattern Buttons
+        // --- Hand Tool & Pan Logic ---
+        const handToolBtn = document.getElementById('handToolBtn');
+        let isHandToolActive = false;
+        // isPanning is already declared globally
+        let startPanX = 0;
+        let startPanY = 0;
+        let scrollStartX = 0;
+        let scrollStartY = 0;
+
+        if (handToolBtn) {
+            handToolBtn.addEventListener('click', () => {
+                isHandToolActive = !isHandToolActive;
+                updateHandToolUI();
+            });
+        }
+
+        function updateHandToolUI() {
+            if (isHandToolActive) {
+                handToolBtn.classList.add('bg-green-100', 'text-green-600', 'border-green-500');
+                detailCanvas.style.cursor = 'grab';
+            } else {
+                handToolBtn.classList.remove('bg-green-100', 'text-green-600', 'border-green-500');
+                updateCursor(); // Restore tool cursor
+            }
+        }
+
+        function updateCursor() {
+            if (isHandToolActive) {
+                detailCanvas.style.cursor = 'grab';
+            } else if (currentTool === 'move') {
+                detailCanvas.style.cursor = 'move';
+            } else if (currentTool === 'brush') {
+                updateBrushCursor();
+            } else if (currentTool === 'magicWand') {
+                detailCanvas.style.cursor = 'crosshair';
+            }
+        }
+
+        const detailContainer = detailEditor.querySelector('.canvas-container');
+
+        detailContainer.addEventListener('mousedown', (e) => {
+            if (isHandToolActive) {
+                isPanning = true;
+                detailCanvas.style.cursor = 'grabbing';
+                startPanX = e.clientX;
+                startPanY = e.clientY;
+                scrollStartX = detailContainer.scrollLeft;
+                scrollStartY = detailContainer.scrollTop;
+                e.preventDefault(); // Prevent text selection
+            }
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (isPanning && isHandToolActive) {
+                const dx = e.clientX - startPanX;
+                const dy = e.clientY - startPanY;
+                detailContainer.scrollLeft = scrollStartX - dx;
+                detailContainer.scrollTop = scrollStartY - dy;
+            }
+        });
+
+        window.addEventListener('mouseup', () => {
+            if (isPanning) {
+                isPanning = false;
+                if (isHandToolActive) detailCanvas.style.cursor = 'grab';
+            }
+        });
+
+        // --- Background Pattern Persistence ---
+        // currentBgPattern is already declared globally
+
+        function setBackgroundPattern(pattern) {
+            currentBgPattern = pattern; // Update current pattern
+
+            // Update buttons UI
             document.querySelectorAll('.bg-pattern-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    setBackgroundPattern(btn.dataset.pattern);
-                });
-            });
-
-            centerBtn?.addEventListener('click', centerPosition);
-            detailUndoBtn?.addEventListener('click', detailUndo);
-            detailRedoBtn?.addEventListener('click', detailRedo);
-            detailResetBtn?.addEventListener('click', detailReset);
-            prevImageBtn?.addEventListener('click', navigateToPrev);
-            nextImageBtn?.addEventListener('click', navigateToNext);
-            closeEditorBtn?.addEventListener('click', () => {
-                // Save current state before closing
-                if (currentEditingIndex !== -1) {
-                    cellEditorStates[currentEditingIndex].imageData = detailCtx.getImageData(0, 0, detailCanvas.width, detailCanvas.height);
+                if (btn.dataset.pattern === pattern) {
+                    btn.classList.add('border-green-500');
+                    btn.classList.remove('border-gray-300');
+                } else {
+                    btn.classList.remove('border-green-500');
+                    btn.classList.add('border-gray-300');
                 }
-                closeDetailEditor();
             });
 
-            // Robust coordinate calculation helper
-            function getCanvasCoordinates(e, canvas) {
-                const rect = canvas.getBoundingClientRect();
-                const scaleX = canvas.width / rect.width;
-                const scaleY = canvas.height / rect.height;
-                return {
-                    x: (e.clientX - rect.left) * scaleX,
-                    y: (e.clientY - rect.top) * scaleY
-                };
+            // Update canvas background
+            const wrapper = document.getElementById('detailCanvasWrapper');
+            wrapper.className = 'relative'; // Reset
+
+            if (pattern === 'transparent') {
+                wrapper.style.backgroundImage = 'linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)';
+                wrapper.style.backgroundSize = '20px 20px';
+                wrapper.style.backgroundPosition = '0 0, 0 10px, 10px -10px, -10px 0px';
+                wrapper.style.backgroundColor = 'white';
+            } else if (pattern === 'dark') {
+                // Dark checkerboard
+                wrapper.style.backgroundImage = 'linear-gradient(45deg, #333 25%, transparent 25%), linear-gradient(-45deg, #333 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #333 75%), linear-gradient(-45deg, transparent 75%, #333 75%)';
+                wrapper.style.backgroundSize = '20px 20px';
+                wrapper.style.backgroundPosition = '0 0, 0 10px, 10px -10px, -10px 0px';
+                wrapper.style.backgroundColor = '#1a1a1a';
+            } else if (pattern === 'normal') {
+                wrapper.style.background = '#8fb4d8'; // LINE default blue
+                wrapper.style.backgroundImage = 'none';
             }
+        }
 
-            // Canvas interaction for detail editor
-            // Helper to redraw canvas from state (Non-destructive)
-            function redrawCanvas(index) {
-                if (index === -1 || !cellEditorStates[index]) return;
+        function updateBrushCursor() {
+            // Create dynamic circular cursor based on brush size
+            const size = Math.max(16, Math.min(brushSize * 2, 64)); // Clamp size for visibility
+            const cursorSvg = `data:image/svg+xml,${encodeURIComponent(
+                `<svg xmlns='http://www.w3.org/2000/svg' width='${size}' height='${size}' viewBox='0 0 ${size} ${size}'><circle cx='${size / 2}' cy='${size / 2}' r='${size / 2 - 1}' stroke='black' stroke-width='2' fill='none'/><circle cx='${size / 2}' cy='${size / 2}' r='${size / 2 - 1}' stroke='white' stroke-width='1' fill='none'/></svg>`
+            )}`;
+            detailCanvas.style.cursor = `url("${cursorSvg}") ${size / 2} ${size / 2}, crosshair`;
+        }
 
-                const state = cellEditorStates[index];
-                const imgData = state.imageData;
+        // Event Listeners for Detail Editor
+        toolMoveBtn?.addEventListener('click', () => switchTool('move'));
+        toolBrushBtn?.addEventListener('click', () => switchTool('brush'));
+        toolMagicWandBtn?.addEventListener('click', () => switchTool('magicWand'));
 
-                // Clear canvas
-                detailCtx.clearRect(0, 0, detailCanvas.width, detailCanvas.height);
-
-                // Create a temporary canvas to hold the image data
-                const tempCanvas = document.createElement('canvas');
-                tempCanvas.width = detailCanvas.width;
-                tempCanvas.height = detailCanvas.height;
-                const tempCtx = tempCanvas.getContext('2d');
-                tempCtx.putImageData(imgData, 0, 0);
-
-                // Draw the temporary canvas onto the detail canvas at the specified position
-                detailCtx.drawImage(tempCanvas, state.position.x, state.position.y);
+        brushSizeSlider?.addEventListener('input', (e) => {
+            brushSize = parseInt(e.target.value);
+            brushSizeVal.innerText = brushSize;
+            // Update cursor if brush tool is active
+            if (currentTool === 'brush') {
+                updateBrushCursor();
             }
+        });
 
-            // Canvas interaction for detail editor
-            detailCanvas?.addEventListener('mousedown', (e) => {
-                const coords = getCanvasCoordinates(e, detailCanvas);
-                const x = coords.x;
-                const y = coords.y;
+        document.querySelectorAll('input[name="brushMode"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                brushMode = e.target.value;
+            });
+        });
 
+        // Zoom Slider
+        const zoomSlider = document.getElementById('zoomSlider');
+        if (zoomSlider) {
+            zoomSlider.addEventListener('input', (e) => {
+                const zoom = parseInt(e.target.value) / 100;
+                setZoom(zoom);
+            });
+        }
+
+        // Trackpad Panning (Wheel event)
+        detailContainer.addEventListener('wheel', (e) => {
+            // If zooming with Ctrl key (pinch to zoom), let default happen or handle custom zoom?
+            // User asked for "move with two fingers", which is standard scroll on trackpad.
+            // Since overflow is hidden, we handle scroll manually.
+
+            if (e.ctrlKey) {
+                // Optional: Handle pinch to zoom here if needed, but user didn't explicitly ask for it.
+                // For now, prevent default to avoid browser zoom.
+                e.preventDefault();
+                const delta = -e.deltaY;
+                const step = 0.1;
+                let newZoom = currentZoom + (delta > 0 ? step : -step);
+                newZoom = Math.max(1, Math.min(5, newZoom)); // 100% to 500%
+                setZoom(newZoom);
+            } else {
+                // Pan
+                e.preventDefault();
+                detailContainer.scrollLeft += e.deltaX;
+                detailContainer.scrollTop += e.deltaY;
+            }
+        }, { passive: false });
+
+        // Background Pattern Buttons
+        document.querySelectorAll('.bg-pattern-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                setBackgroundPattern(btn.dataset.pattern);
+            });
+        });
+
+        centerBtn?.addEventListener('click', centerPosition);
+        detailUndoBtn?.addEventListener('click', detailUndo);
+        detailRedoBtn?.addEventListener('click', detailRedo);
+        detailResetBtn?.addEventListener('click', detailReset);
+        prevImageBtn?.addEventListener('click', navigateToPrev);
+        nextImageBtn?.addEventListener('click', navigateToNext);
+        closeEditorBtn?.addEventListener('click', () => {
+            // Save current state before closing
+            if (currentEditingIndex !== -1) {
+                cellEditorStates[currentEditingIndex].imageData = detailCtx.getImageData(0, 0, detailCanvas.width, detailCanvas.height);
+            }
+            closeDetailEditor();
+        });
+
+        // Robust coordinate calculation helper
+        function getCanvasCoordinates(e, canvas) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            return {
+                x: (e.clientX - rect.left) * scaleX,
+                y: (e.clientY - rect.top) * scaleY
+            };
+        }
+
+        // Canvas interaction for detail editor
+        // Helper to redraw canvas from state (Non-destructive)
+        function redrawCanvas(index) {
+            if (index === -1 || !cellEditorStates[index]) return;
+
+            const state = cellEditorStates[index];
+            const imgData = state.imageData;
+
+            // Clear canvas
+            detailCtx.clearRect(0, 0, detailCanvas.width, detailCanvas.height);
+
+            // Create a temporary canvas to hold the image data
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = detailCanvas.width;
+            tempCanvas.height = detailCanvas.height;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.putImageData(imgData, 0, 0);
+
+            // Draw the temporary canvas onto the detail canvas at the specified position
+            detailCtx.drawImage(tempCanvas, state.position.x, state.position.y);
+        }
+
+        // Canvas interaction for detail editor
+        detailCanvas?.addEventListener('mousedown', (e) => {
+            const coords = getCanvasCoordinates(e, detailCanvas);
+            const x = coords.x;
+            const y = coords.y;
+
+            if (currentTool === 'move') {
+                isDragging = true;
+                dragStart = { x: x, y: y };
+                // Non-destructive: No need to capture image data here
+            } else if (currentTool === 'brush') {
+                applyBrush(x, y);
+                isDragging = true;
+            } else if (currentTool === 'magicWand') {
+                const tolerance = parseInt(toleranceRange.value);
+                floodFill(Math.floor(x), Math.floor(y), tolerance, detailCtx, detailCanvas.width, detailCanvas.height);
+                saveDetailHistory();
+            }
+        });
+
+
+
+        detailCanvas?.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+
+            const coords = getCanvasCoordinates(e, detailCanvas);
+            const x = coords.x;
+            const y = coords.y;
+
+            if (currentTool === 'move') {
+                // Non-Destructive Move
+                const dx = x - dragStart.x;
+                const dy = y - dragStart.y;
+
+                // Update position in state
+                const state = cellEditorStates[currentEditingIndex];
+                state.position.x += dx;
+                state.position.y += dy;
+
+                // Redraw
+                redrawCanvas(currentEditingIndex);
+
+                // Update drag start for next frame (continuous delta)
+                dragStart = { x: x, y: y };
+
+                // Update display
+                posXDisplay.innerText = Math.round(state.position.x);
+                posYDisplay.innerText = Math.round(state.position.y);
+
+            } else if (currentTool === 'brush') {
+                applyBrush(x, y);
+            }
+        });
+
+        detailCanvas?.addEventListener('mouseup', () => {
+            if (isDragging && currentEditingIndex !== -1) {
                 if (currentTool === 'move') {
-                    isDragging = true;
-                    dragStart = { x: x, y: y };
-                    // Non-destructive: No need to capture image data here
-                } else if (currentTool === 'brush') {
-                    applyBrush(x, y);
-                    isDragging = true;
-                } else if (currentTool === 'magicWand') {
-                    const tolerance = parseInt(toleranceRange.value);
-                    floodFill(Math.floor(x), Math.floor(y), tolerance, detailCtx, detailCanvas.width, detailCanvas.height);
+                    // Save the baked change
+                    saveDetailHistory();
+                    // Reset drag state
+                    dragStartImageData = null;
+                } else {
                     saveDetailHistory();
                 }
-            });
+            }
+            isDragging = false;
+        });
 
-
-
-            detailCanvas?.addEventListener('mousemove', (e) => {
-                if (!isDragging) return;
-
-                const coords = getCanvasCoordinates(e, detailCanvas);
-                const x = coords.x;
-                const y = coords.y;
-
+        detailCanvas?.addEventListener('mouseleave', () => {
+            if (isDragging && currentEditingIndex !== -1) {
                 if (currentTool === 'move') {
-                    // Non-Destructive Move
-                    const dx = x - dragStart.x;
-                    const dy = y - dragStart.y;
-
-                    // Update position in state
-                    const state = cellEditorStates[currentEditingIndex];
-                    state.position.x += dx;
-                    state.position.y += dy;
-
-                    // Redraw
-                    redrawCanvas(currentEditingIndex);
-
-                    // Update drag start for next frame (continuous delta)
-                    dragStart = { x: x, y: y };
-
-                    // Update display
-                    posXDisplay.innerText = Math.round(state.position.x);
-                    posYDisplay.innerText = Math.round(state.position.y);
-
-                } else if (currentTool === 'brush') {
-                    applyBrush(x, y);
+                    // Save the baked change
+                    saveDetailHistory();
+                    // Reset drag state
+                    dragStartImageData = null;
+                } else {
+                    saveDetailHistory();
                 }
-            });
+            }
+            isDragging = false;
+        });
 
-            detailCanvas?.addEventListener('mouseup', () => {
-                if (isDragging && currentEditingIndex !== -1) {
-                    if (currentTool === 'move') {
-                        // Save the baked change
-                        saveDetailHistory();
-                        // Reset drag state
-                        dragStartImageData = null;
-                    } else {
-                        saveDetailHistory();
-                    }
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            if (detailEditor.classList.contains('hidden')) return;
+
+            // Tool shortcuts
+            if (e.key === 'v' || e.key === 'V') {
+                switchTool('move');
+                e.preventDefault();
+            } else if (e.key === 'b' || e.key === 'B') {
+                switchTool('brush');
+                e.preventDefault();
+            } else if (e.key === 'w' || e.key === 'W') {
+                switchTool('magicWand');
+                e.preventDefault();
+            }
+
+            // Undo/Redo shortcuts
+            if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+                detailUndo();
+                e.preventDefault();
+            } else if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+                detailRedo();
+                e.preventDefault();
+            }
+
+            // Arrow key movement (only in move tool)
+            if (currentTool === 'move' && currentEditingIndex !== -1) {
+                const state = cellEditorStates[currentEditingIndex];
+                const step = e.shiftKey ? 10 : 1;
+                let moved = false;
+
+                if (e.key === 'ArrowLeft') {
+                    state.position.x -= step;
+                    moved = true;
+                } else if (e.key === 'ArrowRight') {
+                    state.position.x += step;
+                    moved = true;
+                } else if (e.key === 'ArrowUp') {
+                    state.position.y -= step;
+                    moved = true;
+                } else if (e.key === 'ArrowDown') {
+                    state.position.y += step;
+                    moved = true;
                 }
-                isDragging = false;
-            });
 
-            detailCanvas?.addEventListener('mouseleave', () => {
-                if (isDragging && currentEditingIndex !== -1) {
-                    if (currentTool === 'move') {
-                        // Save the baked change
-                        saveDetailHistory();
-                        // Reset drag state
-                        dragStartImageData = null;
-                    } else {
-                        saveDetailHistory();
-                    }
-                }
-                isDragging = false;
-            });
-
-            // Keyboard controls
-            document.addEventListener('keydown', (e) => {
-                if (detailEditor.classList.contains('hidden')) return;
-
-                // Tool shortcuts
-                if (e.key === 'v' || e.key === 'V') {
-                    switchTool('move');
-                    e.preventDefault();
-                } else if (e.key === 'b' || e.key === 'B') {
-                    switchTool('brush');
-                    e.preventDefault();
-                } else if (e.key === 'w' || e.key === 'W') {
-                    switchTool('magicWand');
+                if (moved) {
+                    updatePositionDisplay();
                     e.preventDefault();
                 }
+            }
+        });
 
-                // Undo/Redo shortcuts
-                if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
-                    detailUndo();
-                    e.preventDefault();
-                } else if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
-                    detailRedo();
-                    e.preventDefault();
+        // Release arrow keys to save history
+        document.addEventListener('keyup', (e) => {
+            if (detailEditor.classList.contains('hidden')) return;
+            if (currentTool === 'move' && currentEditingIndex !== -1) {
+                if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
+                    saveDetailHistory();
                 }
+            }
+        });
 
-                // Arrow key movement (only in move tool)
-                if (currentTool === 'move' && currentEditingIndex !== -1) {
-                    const state = cellEditorStates[currentEditingIndex];
-                    const step = e.shiftKey ? 10 : 1;
-                    let moved = false;
+        function applyBrush(x, y) {
+            if (!detailCtx || currentEditingIndex === -1) return;
 
-                    if (e.key === 'ArrowLeft') {
-                        state.position.x -= step;
-                        moved = true;
-                    } else if (e.key === 'ArrowRight') {
-                        state.position.x += step;
-                        moved = true;
-                    } else if (e.key === 'ArrowUp') {
-                        state.position.y -= step;
-                        moved = true;
-                    } else if (e.key === 'ArrowDown') {
-                        state.position.y += step;
-                        moved = true;
-                    }
+            const imageData = detailCtx.getImageData(0, 0, detailCanvas.width, detailCanvas.height);
+            const data = imageData.data;
 
-                    if (moved) {
-                        updatePositionDisplay();
-                        e.preventDefault();
-                    }
-                }
-            });
+            // Circular brush
+            for (let dy = -brushSize; dy <= brushSize; dy++) {
+                for (let dx = -brushSize; dx <= brushSize; dx++) {
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist > brushSize) continue;
 
-            // Release arrow keys to save history
-            document.addEventListener('keyup', (e) => {
-                if (detailEditor.classList.contains('hidden')) return;
-                if (currentTool === 'move' && currentEditingIndex !== -1) {
-                    if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
-                        saveDetailHistory();
-                    }
-                }
-            });
+                    const px = Math.floor(x + dx);
+                    const py = Math.floor(y + dy);
 
-            function applyBrush(x, y) {
-                if (!detailCtx || currentEditingIndex === -1) return;
+                    if (px < 0 || px >= detailCanvas.width || py < 0 || py >= detailCanvas.height) continue;
 
-                const imageData = detailCtx.getImageData(0, 0, detailCanvas.width, detailCanvas.height);
-                const data = imageData.data;
+                    const idx = (py * detailCanvas.width + px) * 4;
 
-                // Circular brush
-                for (let dy = -brushSize; dy <= brushSize; dy++) {
-                    for (let dx = -brushSize; dx <= brushSize; dx++) {
-                        const dist = Math.sqrt(dx * dx + dy * dy);
-                        if (dist > brushSize) continue;
-
-                        const px = Math.floor(x + dx);
-                        const py = Math.floor(y + dy);
-
-                        if (px < 0 || px >= detailCanvas.width || py < 0 || py >= detailCanvas.height) continue;
-
-                        const idx = (py * detailCanvas.width + px) * 4;
-
-                        if (brushMode === 'erase') {
-                            data[idx + 3] = 0; // Set alpha to 0
-                        } else if (brushMode === 'restore') {
-                            // Restore from ORIGINAL image data
-                            const state = cellEditorStates[currentEditingIndex];
-                            if (state.originalImageData) {
-                                const originalData = state.originalImageData.data;
-                                data[idx] = originalData[idx];
-                                data[idx + 1] = originalData[idx + 1];
-                                data[idx + 2] = originalData[idx + 2];
-                                data[idx + 3] = originalData[idx + 3];
-                            }
+                    if (brushMode === 'erase') {
+                        data[idx + 3] = 0; // Set alpha to 0
+                    } else if (brushMode === 'restore') {
+                        // Restore from ORIGINAL image data
+                        const state = cellEditorStates[currentEditingIndex];
+                        if (state.originalImageData) {
+                            const originalData = state.originalImageData.data;
+                            data[idx] = originalData[idx];
+                            data[idx + 1] = originalData[idx + 1];
+                            data[idx + 2] = originalData[idx + 2];
+                            data[idx + 3] = originalData[idx + 3];
                         }
                     }
                 }
-
-                detailCtx.putImageData(imageData, 0, 0);
-                cellEditorStates[currentEditingIndex].imageData = imageData;
             }
 
+            detailCtx.putImageData(imageData, 0, 0);
+            cellEditorStates[currentEditingIndex].imageData = imageData;
+        }
 
 
-            // ===== LINE PREVIEW FUNCTIONS =====
 
-            let currentPreviewBg = 'dark'; // Default background
+        // ===== LINE PREVIEW FUNCTIONS =====
 
-            function showLinePreview(stickerDataURLs) {
-                const linePreview = document.getElementById('linePreview');
-                const chatMessages = document.getElementById('chatMessages');
+        let currentPreviewBg = 'dark'; // Default background
 
-                // Clear previous messages
-                chatMessages.innerHTML = '';
+        function showLinePreview(stickerDataURLs) {
+            const linePreview = document.getElementById('linePreview');
+            const chatMessages = document.getElementById('chatMessages');
 
-                // Create sample chat messages with stickers
-                const messages = [
-                    { type: 'text', content: 'Hello', isUser: true },
-                ];
+            // Clear previous messages
+            chatMessages.innerHTML = '';
 
-                // Add stickers (show up to 5 for preview)
-                const stickersToShow = stickerDataURLs.slice(0, Math.min(5, stickerDataURLs.length));
-                stickersToShow.forEach((stickerURL, index) => {
-                    messages.push({ type: 'sticker', content: stickerURL, isUser: index % 2 === 0 });
-                });
+            // Create sample chat messages with stickers
+            const messages = [
+                { type: 'text', content: 'Hello', isUser: true },
+            ];
 
-                // Render messages
-                messages.forEach(msg => {
-                    const messageDiv = document.createElement('div');
-                    messageDiv.className = `flex ${msg.isUser ? 'justify-start' : 'justify-end'}`;
+            // Add stickers (show up to 5 for preview)
+            const stickersToShow = stickerDataURLs.slice(0, Math.min(5, stickerDataURLs.length));
+            stickersToShow.forEach((stickerURL, index) => {
+                messages.push({ type: 'sticker', content: stickerURL, isUser: index % 2 === 0 });
+            });
 
-                    if (msg.type === 'text') {
-                        const bubble = document.createElement('div');
-                        bubble.className = `px-3 py-2 rounded-2xl max-w-xs ${msg.isUser
-                            ? 'bg-white text-gray-800'
-                            : 'bg-green-500 text-white'
-                            }`;
-                        bubble.textContent = msg.content;
+            // Render messages
+            messages.forEach(msg => {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `flex ${msg.isUser ? 'justify-start' : 'justify-end'}`;
 
-                        const wrapper = document.createElement('div');
-                        wrapper.className = 'flex items-end gap-2';
+                if (msg.type === 'text') {
+                    const bubble = document.createElement('div');
+                    bubble.className = `px-3 py-2 rounded-2xl max-w-xs ${msg.isUser
+                        ? 'bg-white text-gray-800'
+                        : 'bg-green-500 text-white'
+                        }`;
+                    bubble.textContent = msg.content;
 
-                        if (msg.isUser) {
-                            // Add avatar
-                            const avatar = document.createElement('div');
-                            avatar.className = 'w-10 h-10 rounded-full bg-green-500 flex-shrink-0 flex items-center justify-center';
-                            avatar.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg>`;
-                            wrapper.appendChild(avatar);
-                        }
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'flex items-end gap-2';
 
-                        wrapper.appendChild(bubble);
-                        messageDiv.appendChild(wrapper);
-                    } else if (msg.type === 'sticker') {
-                        const stickerImg = document.createElement('img');
-                        stickerImg.src = msg.content;
-                        stickerImg.className = 'max-w-[150px] max-h-[150px]';
-                        stickerImg.style.imageRendering = 'crisp-edges';
-
-                        const wrapper = document.createElement('div');
-                        wrapper.className = 'flex items-end gap-2';
-
-                        if (msg.isUser) {
-                            // Add avatar
-                            const avatar = document.createElement('div');
-                            avatar.className = 'w-10 h-10 rounded-full bg-green-500 flex-shrink-0 flex items-center justify-center';
-                            avatar.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg>`;
-                            wrapper.appendChild(avatar);
-                        }
-
-                        wrapper.appendChild(stickerImg);
-                        messageDiv.appendChild(wrapper);
+                    if (msg.isUser) {
+                        // Add avatar
+                        const avatar = document.createElement('div');
+                        avatar.className = 'w-10 h-10 rounded-full bg-green-500 flex-shrink-0 flex items-center justify-center';
+                        avatar.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg>`;
+                        wrapper.appendChild(avatar);
                     }
 
-                    chatMessages.appendChild(messageDiv);
-                });
+                    wrapper.appendChild(bubble);
+                    messageDiv.appendChild(wrapper);
+                } else if (msg.type === 'sticker') {
+                    const stickerImg = document.createElement('img');
+                    stickerImg.src = msg.content;
+                    stickerImg.className = 'max-w-[150px] max-h-[150px]';
+                    stickerImg.style.imageRendering = 'crisp-edges';
 
-                // Show preview section
-                linePreview.classList.remove('hidden');
-                linePreview.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'flex items-end gap-2';
 
-                // Set initial background
-                setBackgroundPattern(currentPattern);
-            }
-
-            function setPreviewBackground(bg) {
-                currentPreviewBg = bg;
-                const chatContainer = document.getElementById('chatContainer');
-                const chatMessages = document.getElementById('chatMessages');
-
-                // Update button states
-                document.querySelectorAll('.preview-bg-btn').forEach(btn => {
-                    if (btn.dataset.bg === bg) {
-                        btn.classList.add('border-green-500');
-                        btn.classList.remove('border-gray-300');
-                    } else {
-                        btn.classList.remove('border-green-500');
-                        btn.classList.add('border-gray-300');
+                    if (msg.isUser) {
+                        // Add avatar
+                        const avatar = document.createElement('div');
+                        avatar.className = 'w-10 h-10 rounded-full bg-green-500 flex-shrink-0 flex items-center justify-center';
+                        avatar.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg>`;
+                        wrapper.appendChild(avatar);
                     }
-                });
 
-                // Apply background styles
-                switch (bg) {
-                    case 'light':
-                        chatContainer.style.background = '#ffffff';
-                        chatMessages.style.background = '#ffffff';
-                        break;
-                    case 'normal':
-                        chatContainer.style.background = '#8fb4d8';
-                        chatMessages.style.background = '#8fb4d8';
-                        break;
-                    case 'dark':
-                        chatContainer.style.background = '#1a1a1a';
-                        chatMessages.style.background = '#1a1a1a';
-                        break;
+                    wrapper.appendChild(stickerImg);
+                    messageDiv.appendChild(wrapper);
                 }
-            }
 
-            // Event listeners for preview background buttons
+                chatMessages.appendChild(messageDiv);
+            });
+
+            // Show preview section
+            linePreview.classList.remove('hidden');
+            linePreview.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+            // Set initial background
+            setBackgroundPattern(currentPattern);
+        }
+
+        function setPreviewBackground(bg) {
+            currentPreviewBg = bg;
+            const chatContainer = document.getElementById('chatContainer');
+            const chatMessages = document.getElementById('chatMessages');
+
+            // Update button states
             document.querySelectorAll('.preview-bg-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    setPreviewBackground(btn.dataset.bg);
-                });
+                if (btn.dataset.bg === bg) {
+                    btn.classList.add('border-green-500');
+                    btn.classList.remove('border-gray-300');
+                } else {
+                    btn.classList.remove('border-green-500');
+                    btn.classList.add('border-gray-300');
+                }
             });
 
-            // ===== DETAIL EDITOR PREVIEW MODAL =====
+            // Apply background styles
+            switch (bg) {
+                case 'light':
+                    chatContainer.style.background = '#ffffff';
+                    chatMessages.style.background = '#ffffff';
+                    break;
+                case 'normal':
+                    chatContainer.style.background = '#8fb4d8';
+                    chatMessages.style.background = '#8fb4d8';
+                    break;
+                case 'dark':
+                    chatContainer.style.background = '#1a1a1a';
+                    chatMessages.style.background = '#1a1a1a';
+                    break;
+            }
+        }
 
-            const detailPreviewModal = document.getElementById('detailPreviewModal');
-            const showDetailPreviewBtn = document.getElementById('showDetailPreviewBtn');
-            const closeDetailPreviewBtn = document.getElementById('closeDetailPreviewBtn');
-            let currentMobilePreviewBg = 'normal';
+        // Event listeners for preview background buttons
+        document.querySelectorAll('.preview-bg-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                setPreviewBackground(btn.dataset.bg);
+            });
+        });
 
-            function showDetailPreview() {
-                if (!detailCtx || currentEditingIndex === -1) {
-                    alert('スティッカーを編集してください');
-                    return;
-                }
+        // ===== DETAIL EDITOR PREVIEW MODAL =====
 
-                // Get current sticker as data URL
-                const stickerDataURL = detailCanvas.toDataURL();
+        const detailPreviewModal = document.getElementById('detailPreviewModal');
+        const showDetailPreviewBtn = document.getElementById('showDetailPreviewBtn');
+        const closeDetailPreviewBtn = document.getElementById('closeDetailPreviewBtn');
+        let currentMobilePreviewBg = 'normal';
 
-                // Populate mobile preview
-                populateMobilePreview(stickerDataURL, currentMobilePreviewBg);
-
-                // Show modal
-                detailPreviewModal.classList.remove('hidden');
+        function showDetailPreview() {
+            if (!detailCtx || currentEditingIndex === -1) {
+                alert('スティッカーを編集してください');
+                return;
             }
 
-            function populateMobilePreview(stickerDataURL, bgType) {
-                const container = document.getElementById('previewChatMobile');
-                if (!container) return;
+            // Get current sticker as data URL
+            const stickerDataURL = detailCanvas.toDataURL();
 
-                // Set background
-                switch (bgType) {
-                    case 'light':
-                        container.style.background = '#ffffff';
-                        break;
-                    case 'normal':
-                        container.style.background = '#8fb4d8';
-                        break;
-                    case 'dark':
-                        container.style.background = '#1a1a1a';
-                        break;
-                }
+            // Populate mobile preview
+            populateMobilePreview(stickerDataURL, currentMobilePreviewBg);
 
-                // Clear previous content
-                container.innerHTML = '';
+            // Show modal
+            detailPreviewModal.classList.remove('hidden');
+        }
 
-                // Create sample messages
-                const messages = [
-                    { type: 'text', content: 'Hello', isUser: true },
-                    { type: 'sticker', content: stickerDataURL, isUser: true },
-                    { type: 'sticker', content: stickerDataURL, isUser: false },
-                ];
+        function populateMobilePreview(stickerDataURL, bgType) {
+            const container = document.getElementById('previewChatMobile');
+            if (!container) return;
 
-                messages.forEach(msg => {
-                    const messageDiv = document.createElement('div');
-                    messageDiv.className = `flex ${msg.isUser ? 'justify-start' : 'justify-end'}`;
+            // Set background
+            switch (bgType) {
+                case 'light':
+                    container.style.background = '#ffffff';
+                    break;
+                case 'normal':
+                    container.style.background = '#8fb4d8';
+                    break;
+                case 'dark':
+                    container.style.background = '#1a1a1a';
+                    break;
+            }
 
-                    if (msg.type === 'text') {
-                        const bubble = document.createElement('div');
-                        bubble.className = `px-3 py-2 rounded-2xl text-sm ${msg.isUser
-                            ? 'bg-white text-gray-800'
-                            : 'bg-green-500 text-white'
-                            }`;
-                        bubble.textContent = msg.content;
+            // Clear previous content
+            container.innerHTML = '';
 
-                        const wrapper = document.createElement('div');
-                        wrapper.className = 'flex items-end gap-2';
+            // Create sample messages
+            const messages = [
+                { type: 'text', content: 'Hello', isUser: true },
+                { type: 'sticker', content: stickerDataURL, isUser: true },
+                { type: 'sticker', content: stickerDataURL, isUser: false },
+            ];
 
-                        if (msg.isUser) {
-                            const avatar = document.createElement('div');
-                            avatar.className = 'w-8 h-8 rounded-full bg-green-500 flex-shrink-0 flex items-center justify-center';
-                            avatar.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>`;
-                            wrapper.appendChild(avatar);
-                        }
+            messages.forEach(msg => {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `flex ${msg.isUser ? 'justify-start' : 'justify-end'}`;
 
-                        wrapper.appendChild(bubble);
-                        messageDiv.appendChild(wrapper);
-                    } else if (msg.type === 'sticker') {
-                        const stickerImg = document.createElement('img');
-                        stickerImg.src = msg.content;
-                        stickerImg.className = 'max-w-[150px] max-h-[150px]';
-                        stickerImg.style.imageRendering = 'crisp-edges';
+                if (msg.type === 'text') {
+                    const bubble = document.createElement('div');
+                    bubble.className = `px-3 py-2 rounded-2xl text-sm ${msg.isUser
+                        ? 'bg-white text-gray-800'
+                        : 'bg-green-500 text-white'
+                        }`;
+                    bubble.textContent = msg.content;
 
-                        const wrapper = document.createElement('div');
-                        wrapper.className = 'flex items-end gap-2';
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'flex items-end gap-2';
 
-                        if (msg.isUser) {
-                            const avatar = document.createElement('div');
-                            avatar.className = 'w-8 h-8 rounded-full bg-green-500 flex-shrink-0 flex items-center justify-center';
-                            avatar.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>`;
-                            wrapper.appendChild(avatar);
-                        }
-
-                        wrapper.appendChild(stickerImg);
-                        messageDiv.appendChild(wrapper);
+                    if (msg.isUser) {
+                        const avatar = document.createElement('div');
+                        avatar.className = 'w-8 h-8 rounded-full bg-green-500 flex-shrink-0 flex items-center justify-center';
+                        avatar.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>`;
+                        wrapper.appendChild(avatar);
                     }
 
-                    container.appendChild(messageDiv);
-                });
-            }
+                    wrapper.appendChild(bubble);
+                    messageDiv.appendChild(wrapper);
+                } else if (msg.type === 'sticker') {
+                    const stickerImg = document.createElement('img');
+                    stickerImg.src = msg.content;
+                    stickerImg.className = 'max-w-[150px] max-h-[150px]';
+                    stickerImg.style.imageRendering = 'crisp-edges';
 
-            function switchMobilePreviewBg(bgType) {
-                currentMobilePreviewBg = bgType;
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'flex items-end gap-2';
 
-                // Update button states
-                document.querySelectorAll('.preview-switch-btn').forEach(btn => {
-                    if (btn.dataset.bg === bgType) {
-                        btn.classList.add('border-green-500');
-                        btn.classList.remove('border-gray-300');
-                    } else {
-                        btn.classList.remove('border-green-500');
-                        btn.classList.add('border-gray-300');
+                    if (msg.isUser) {
+                        const avatar = document.createElement('div');
+                        avatar.className = 'w-8 h-8 rounded-full bg-green-500 flex-shrink-0 flex items-center justify-center';
+                        avatar.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>`;
+                        wrapper.appendChild(avatar);
                     }
-                });
 
-                // Regenerate preview with new background
-                if (!detailCtx || currentEditingIndex === -1) return;
-                const stickerDataURL = detailCanvas.toDataURL();
-                populateMobilePreview(stickerDataURL, bgType);
-            }
+                    wrapper.appendChild(stickerImg);
+                    messageDiv.appendChild(wrapper);
+                }
 
-            function closeDetailPreview() {
-                detailPreviewModal.classList.add('hidden');
-            }
+                container.appendChild(messageDiv);
+            });
+        }
 
-            // Event listeners for detail preview modal
-            showDetailPreviewBtn?.addEventListener('click', showDetailPreview);
-            closeDetailPreviewBtn?.addEventListener('click', closeDetailPreview);
+        function switchMobilePreviewBg(bgType) {
+            currentMobilePreviewBg = bgType;
 
-            // Background switcher buttons
+            // Update button states
             document.querySelectorAll('.preview-switch-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    switchMobilePreviewBg(btn.dataset.bg);
-                });
-            });
-
-            // Close modal on background click
-            detailPreviewModal?.addEventListener('click', (e) => {
-                if (e.target === detailPreviewModal) {
-                    closeDetailPreview();
+                if (btn.dataset.bg === bgType) {
+                    btn.classList.add('border-green-500');
+                    btn.classList.remove('border-gray-300');
+                } else {
+                    btn.classList.remove('border-green-500');
+                    btn.classList.add('border-gray-300');
                 }
             });
+
+            // Regenerate preview with new background
+            if (!detailCtx || currentEditingIndex === -1) return;
+            const stickerDataURL = detailCanvas.toDataURL();
+            populateMobilePreview(stickerDataURL, bgType);
+        }
+
+        function closeDetailPreview() {
+            detailPreviewModal.classList.add('hidden');
+        }
+
+        // Event listeners for detail preview modal
+        showDetailPreviewBtn?.addEventListener('click', showDetailPreview);
+        closeDetailPreviewBtn?.addEventListener('click', closeDetailPreview);
+
+        // Background switcher buttons
+        document.querySelectorAll('.preview-switch-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                switchMobilePreviewBg(btn.dataset.bg);
+            });
+        });
+
+        // Close modal on background click
+        detailPreviewModal?.addEventListener('click', (e) => {
+            if (e.target === detailPreviewModal) {
+                closeDetailPreview();
+            }
+        });
     </script>
 </body>
 
