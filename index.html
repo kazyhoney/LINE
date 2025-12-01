@@ -803,10 +803,6 @@
 
                     // Auto-open detail editor for the first image
                     openDetailEditor(0);
-                    // Scroll to detail editor
-                    setTimeout(() => {
-                        detailEditor.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }, 100);
                 }
                 originalImage.src = e.target.result;
             }
@@ -1023,6 +1019,8 @@
                 // Single click: Open Detail Editor
                 cell.addEventListener('click', (e) => {
                     openDetailEditor(i);
+                    // Scroll to detail editor on manual click
+                    detailEditor.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 });
 
                 // Number label (Top-Left)
