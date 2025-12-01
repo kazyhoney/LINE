@@ -800,6 +800,13 @@
                     updateGrid();
                     updateSelectOptions();
                     generateBtn.disabled = false;
+
+                    // Auto-open detail editor for the first image
+                    openDetailEditor(0);
+                    // Scroll to detail editor
+                    setTimeout(() => {
+                        detailEditor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }, 100);
                 }
                 originalImage.src = e.target.result;
             }
