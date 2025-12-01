@@ -1557,7 +1557,7 @@
         // --- Hand Tool & Pan Logic ---
         const handToolBtn = document.getElementById('handToolBtn');
         let isHandToolActive = false;
-        let isPanning = false;
+        // isPanning is already declared globally
         let startPanX = 0;
         let startPanY = 0;
         let scrollStartX = 0;
@@ -1623,7 +1623,7 @@
         });
 
         // --- Background Pattern Persistence ---
-        let currentBgPattern = 'dark'; // Default pattern
+        // currentBgPattern is already declared globally
 
         function setBackgroundPattern(pattern) {
             currentBgPattern = pattern; // Update current pattern
