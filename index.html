@@ -1395,6 +1395,11 @@
             detailEditor.classList.remove('hidden');
             // detailEditor.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
+            // Restore background pattern
+            if (typeof setBackgroundPattern === 'function') {
+                setBackgroundPattern(currentBgPattern);
+            }
+
             // Auto-fit Logic
             const container = detailEditor.querySelector('.canvas-container');
             const containerW = container.clientWidth;
