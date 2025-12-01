@@ -241,15 +241,18 @@
             <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
                 <!-- Canvas Area -->
                 <div class="lg:col-span-3">
-                    <div class="canvas-container relative border rounded bg-gray-50 overflow-auto w-full h-[70vh] flex items-center justify-center"
+                    <div class="canvas-container relative border rounded bg-gray-50 overflow-auto w-full h-[70vh] flex"
                         id="detailContainer">
-                        <!-- Center Grid Overlay -->
-                        <div id="centerGrid" class="absolute inset-0 pointer-events-none hidden z-20">
-                            <div class="absolute top-1/2 left-0 w-full h-px bg-red-500/50"></div>
-                            <div class="absolute left-1/2 top-0 h-full w-px bg-red-500/50"></div>
-                        </div>
-                        <canvas id="detailCanvas" class="absolute shadow-lg z-10" style="cursor: crosshair;"></canvas>
-                        <div id="detailCanvasWrapper" class="absolute z-0" style="transform-origin: center center;">
+                        <div id="zoomWrapper" class="relative m-auto">
+                            <!-- Center Grid Overlay -->
+                            <div id="centerGrid" class="absolute inset-0 pointer-events-none hidden z-20">
+                                <div class="absolute top-1/2 left-0 w-full h-px bg-red-500/50"></div>
+                                <div class="absolute left-1/2 top-0 h-full w-px bg-red-500/50"></div>
+                            </div>
+                            <canvas id="detailCanvas" class="absolute shadow-lg z-10 origin-top-left"
+                                style="cursor: crosshair;"></canvas>
+                            <div id="detailCanvasWrapper" class="absolute z-0 origin-top-left">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1271,6 +1274,13 @@
                 wrapper.style.height = detailCanvas.height + 'px';
             }
 
+            // Initialize zoom wrapper size
+            const zoomWrapper = document.getElementById('zoomWrapper');
+            if (zoomWrapper) {
+                zoomWrapper.style.width = detailCanvas.width + 'px';
+                zoomWrapper.style.height = detailCanvas.height + 'px';
+            }
+
             detailCtx = detailCanvas.getContext('2d', { willReadFrequently: true });
             detailCtx.putImageData(cellEditorStates[index].imageData, 0, 0);
 
@@ -1585,13 +1595,20 @@
 
             // Apply zoom transform
             detailCanvas.style.transform = `scale(${zoom})`;
-            detailCanvas.style.transformOrigin = 'center center';
+            detailCanvas.style.transformOrigin = 'top left';
 
             // Apply to wrapper as well
             const wrapper = document.getElementById('detailCanvasWrapper');
             if (wrapper) {
                 wrapper.style.transform = `scale(${zoom})`;
-                wrapper.style.transformOrigin = 'center center';
+                wrapper.style.transformOrigin = 'top left';
+            }
+
+            // Resize zoomWrapper to trigger scrollbars
+            const zoomWrapper = document.getElementById('zoomWrapper');
+            if (zoomWrapper) {
+                zoomWrapper.style.width = `${detailCanvas.width * zoom}px`;
+                zoomWrapper.style.height = `${detailCanvas.height * zoom}px`;
             }
         }
 
