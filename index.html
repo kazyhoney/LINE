@@ -241,8 +241,8 @@
             <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
                 <!-- Canvas Area -->
                 <div class="lg:col-span-3">
-                    <div
-                        class="canvas-container relative border rounded bg-gray-50 overflow-hidden w-full h-[70vh] flex items-center justify-center">
+                    <div class="canvas-container relative border rounded bg-gray-50 overflow-auto w-full h-[70vh] flex items-center justify-center"
+                        id="detailContainer">
                         <!-- Center Grid Overlay -->
                         <div id="centerGrid" class="absolute inset-0 pointer-events-none hidden z-20">
                             <div class="absolute top-1/2 left-0 w-full h-px bg-red-500/50"></div>
@@ -344,10 +344,23 @@
                     <!-- Zoom Controls -->
                     <div class="bg-gray-50 p-4 rounded">
                         <label class="block text-xs font-bold text-gray-700 mb-2">ズーム</label>
-                        <div class="flex items-center gap-2">
-                            <input type="range" id="zoomSlider" min="100" max="500" value="100" step="10"
-                                class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
-                            <span id="zoomValue" class="text-xs font-bold w-10 text-right">100%</span>
+                        <div class="flex flex-col gap-2">
+                            <div class="flex items-center gap-2">
+                                <input type="range" id="zoomSlider" min="100" max="500" value="100" step="10"
+                                    class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                                <span id="zoomValue" class="text-xs font-bold w-10 text-right">100%</span>
+                            </div>
+                            <div class="grid grid-cols-3 gap-2">
+                                <button
+                                    class="zoom-btn px-2 py-1 text-xs bg-white border-2 border-green-500 rounded hover:bg-green-50 transition"
+                                    data-zoom="1">100%</button>
+                                <button
+                                    class="zoom-btn px-2 py-1 text-xs bg-white border-2 border-gray-300 rounded hover:bg-green-50 transition"
+                                    data-zoom="2">200%</button>
+                                <button
+                                    class="zoom-btn px-2 py-1 text-xs bg-white border-2 border-gray-300 rounded hover:bg-green-50 transition"
+                                    data-zoom="4">400%</button>
+                            </div>
                         </div>
                     </div>
 
@@ -1559,6 +1572,17 @@
                 zoomValue.textContent = `${Math.round(zoom * 100)}%`;
             }
 
+            // Update zoom buttons
+            document.querySelectorAll('.zoom-btn').forEach(btn => {
+                if (parseFloat(btn.dataset.zoom) === zoom) {
+                    btn.classList.add('border-green-500');
+                    btn.classList.remove('border-gray-300');
+                } else {
+                    btn.classList.remove('border-green-500');
+                    btn.classList.add('border-gray-300');
+                }
+            });
+
             // Apply zoom transform
             detailCanvas.style.transform = `scale(${zoom})`;
             detailCanvas.style.transformOrigin = 'center center';
@@ -1715,27 +1739,24 @@
             });
         }
 
-        // Trackpad Panning (Wheel event)
-        detailContainer.addEventListener('wheel', (e) => {
-            // If zooming with Ctrl key (pinch to zoom), let default happen or handle custom zoom?
-            // User asked for "move with two fingers", which is standard scroll on trackpad.
-            // Since overflow is hidden, we handle scroll manually.
+        // Zoom Buttons
+        document.querySelectorAll('.zoom-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                setZoom(parseFloat(btn.dataset.zoom));
+            });
+        });
 
+        // Trackpad Panning (Wheel event) - Removed custom panning to allow native scrollbars
+        detailContainer.addEventListener('wheel', (e) => {
             if (e.ctrlKey) {
-                // Optional: Handle pinch to zoom here if needed, but user didn't explicitly ask for it.
-                // For now, prevent default to avoid browser zoom.
                 e.preventDefault();
                 const delta = -e.deltaY;
                 const step = 0.1;
                 let newZoom = currentZoom + (delta > 0 ? step : -step);
                 newZoom = Math.max(1, Math.min(5, newZoom)); // 100% to 500%
                 setZoom(newZoom);
-            } else {
-                // Pan
-                e.preventDefault();
-                detailContainer.scrollLeft += e.deltaX;
-                detailContainer.scrollTop += e.deltaY;
             }
+            // Normal scrolling is handled natively by overflow: auto
         }, { passive: false });
 
         // Background Pattern Buttons
