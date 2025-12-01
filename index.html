@@ -95,10 +95,8 @@
 
                 <!-- 2. 分割設定 -->
                 <div class="bg-white p-6 rounded-lg shadow">
-                    <div class="flex justify-between items-end mb-4">
+                    <div class="mb-4">
                         <label class="block text-sm font-bold text-gray-700">2. 分割設定</label>
-                        <button id="dlTemplateBtn"
-                            class="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded hover:bg-blue-200 transition">テンプレートDL</button>
                     </div>
 
                     <div class="grid grid-cols-2 gap-4 mb-4">
@@ -263,32 +261,6 @@
                     <div class="bg-gray-50 p-4 rounded">
                         <label class="block text-xs font-bold text-gray-700 mb-2">ツール選択</label>
                         <div class="space-y-2">
-                            <button id="toolMove"
-                                class="w-full flex items-center gap-2 px-3 py-2 rounded bg-white border-2 border-gray-300 hover:border-green-500 transition">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                    stroke-linejoin="round">
-                                    <polyline points="5 9 2 12 5 15"></polyline>
-                                    <polyline points="9 5 12 2 15 5"></polyline>
-                                    <polyline points="15 19 12 22 9 19"></polyline>
-                                    <polyline points="19 9 22 12 19 15"></polyline>
-                                    <line x1="2" y1="12" x2="22" y2="12"></line>
-                                    <line x1="12" y1="2" x2="12" y2="22"></line>
-                                </svg>
-                                <span class="text-sm">移動ツール</span>
-                            </button>
-                            <button id="toolBrush"
-                                class="w-full flex items-center gap-2 px-3 py-2 rounded bg-white border-2 border-green-500 hover:border-green-500 transition">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                    stroke-linejoin="round">
-                                    <path d="m9.06 11.9 8.07-8.06a2.85 2.85 0 1 1 4.03 4.03l-8.06 8.08"></path>
-                                    <path
-                                        d="M7.07 14.94c-1.66 0-3 1.35-3 3.02 0 1.33-2.5 1.52-2 2.02 1.08 1.1 2.49 2.02 4 2.02 2.2 0 4-1.8 4-4.04a3.01 3.01 0 0 0-3-3.02z">
-                                    </path>
-                                </svg>
-                                <span class="text-sm">透過ブラシ</span>
-                            </button>
                             <button id="toolMagicWand"
                                 class="w-full flex items-center gap-2 px-3 py-2 rounded bg-white border-2 border-gray-300 hover:border-green-500 transition">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
@@ -305,6 +277,32 @@
                                     <path d="M12.2 6.2 11 5"></path>
                                 </svg>
                                 <span class="text-sm">自動透過</span>
+                            </button>
+                            <button id="toolBrush"
+                                class="w-full flex items-center gap-2 px-3 py-2 rounded bg-white border-2 border-green-500 hover:border-green-500 transition">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path d="m9.06 11.9 8.07-8.06a2.85 2.85 0 1 1 4.03 4.03l-8.06 8.08"></path>
+                                    <path
+                                        d="M7.07 14.94c-1.66 0-3 1.35-3 3.02 0 1.33-2.5 1.52-2 2.02 1.08 1.1 2.49 2.02 4 2.02 2.2 0 4-1.8 4-4.04a3.01 3.01 0 0 0-3-3.02z">
+                                    </path>
+                                </svg>
+                                <span class="text-sm">透過ブラシ</span>
+                            </button>
+                            <button id="toolMove"
+                                class="w-full flex items-center gap-2 px-3 py-2 rounded bg-white border-2 border-gray-300 hover:border-green-500 transition">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <polyline points="5 9 2 12 5 15"></polyline>
+                                    <polyline points="9 5 12 2 15 5"></polyline>
+                                    <polyline points="15 19 12 22 9 19"></polyline>
+                                    <polyline points="19 9 22 12 19 15"></polyline>
+                                    <line x1="2" y1="12" x2="22" y2="12"></line>
+                                    <line x1="12" y1="2" x2="12" y2="22"></line>
+                                </svg>
+                                <span class="text-sm">移動ツール</span>
                             </button>
                         </div>
                         <div class="text-xs text-gray-500 mt-2">V: 移動 / B: ブラシ / W: 自動透過</div>
@@ -578,7 +576,6 @@
         const mainImageIndex = document.getElementById('mainImageIndex');
         const previewContainer = document.getElementById('previewContainer');
         const autoCenterCheckbox = document.getElementById('autoCenter');
-        const dlTemplateBtn = document.getElementById('dlTemplateBtn');
 
         // Elements for Color Removal
         const editorCanvas = document.getElementById('editorCanvas');
@@ -644,9 +641,7 @@
         if (imageInput) imageInput.addEventListener('change', handleFileSelect);
         if (colInput) colInput.addEventListener('input', updateGrid);
         if (rowInput) rowInput.addEventListener('input', updateGrid);
-        window.addEventListener('resize', updateGridUI);
         if (generateBtn) generateBtn.addEventListener('click', generateZip);
-        if (dlTemplateBtn) dlTemplateBtn.addEventListener('click', downloadTemplate);
 
 
 
@@ -1213,16 +1208,16 @@
                 // Calculate auto-center position
                 let initialPosition = { x: 0, y: 0 };
                 const bbox = getContentBoundingBox(tempCtx, SPECS.sticker.w, SPECS.sticker.h);
-                
+
                 if (bbox) {
                     // Calculate object center
                     const objectCenterX = bbox.x + bbox.w / 2;
                     const objectCenterY = bbox.y + bbox.h / 2;
-                    
+
                     // Calculate canvas center
                     const canvasCenterX = SPECS.sticker.w / 2;
                     const canvasCenterY = SPECS.sticker.h / 2;
-                    
+
                     // Calculate offset to center the object
                     initialPosition = {
                         x: Math.round(canvasCenterX - objectCenterX),
@@ -1819,40 +1814,7 @@
             cellEditorStates[currentEditingIndex].imageData = imageData;
         }
 
-        function downloadTemplate() {
-            const cols = parseInt(colInput.value) || 4;
-            const rows = parseInt(rowInput.value) || 4;
-            const cellW = 370;
-            const cellH = 320;
-            const canvas = document.createElement('canvas');
-            canvas.width = cols * cellW;
-            canvas.height = rows * cellH;
-            const ctx = canvas.getContext('2d');
 
-            ctx.fillStyle = "#ffffff";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.strokeStyle = "#ff0000";
-            ctx.lineWidth = 4;
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            ctx.font = "bold 30px 'Noto Sans JP', sans-serif";
-            ctx.fillStyle = "#ff0000";
-
-            for (let r = 0; r < rows; r++) {
-                for (let c = 0; c < cols; c++) {
-                    const x = c * cellW;
-                    const y = r * cellH;
-                    ctx.strokeRect(x, y, cellW, cellH);
-                    ctx.fillText(`${cellW} x ${cellH} px`, x + cellW / 2, y + cellH / 2);
-                }
-            }
-            canvas.toBlob(blob => {
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(blob);
-                link.download = `template_${cols}x${rows}.png`;
-                link.click();
-            });
-        }
 
         // ===== LINE PREVIEW FUNCTIONS =====
 
