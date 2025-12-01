@@ -352,18 +352,15 @@
                     <!-- Background Pattern -->
                     <div class="bg-gray-50 p-4 rounded">
                         <label class="block text-xs font-bold text-gray-700 mb-2">背景パターン</label>
-                        <div class="grid grid-cols-4 gap-2">
+                        <div class="grid grid-cols-3 gap-2">
+                            <button
+                                class="bg-pattern-btn px-2 py-2 text-xs bg-white border-2 border-green-500 rounded hover:bg-green-50 transition"
+                                data-pattern="dark">黒</button>
                             <button
                                 class="bg-pattern-btn px-2 py-2 text-xs bg-white border-2 border-gray-300 rounded hover:bg-green-50 transition"
                                 data-pattern="transparent">透過</button>
                             <button
                                 class="bg-pattern-btn px-2 py-2 text-xs bg-white border-2 border-gray-300 rounded hover:bg-green-50 transition"
-                                data-pattern="white">白</button>
-                            <button
-                                class="bg-pattern-btn px-2 py-2 text-xs bg-white border-2 border-gray-300 rounded hover:bg-green-50 transition"
-                                data-pattern="dark">黒</button>
-                            <button
-                                class="bg-pattern-btn px-2 py-2 text-xs bg-white border-2 border-green-500 rounded hover:bg-green-50 transition"
                                 data-pattern="normal">LINE</button>
                         </div>
                     </div>
@@ -1668,12 +1665,12 @@
                 wrapper.style.backgroundSize = '20px 20px';
                 wrapper.style.backgroundPosition = '0 0, 0 10px, 10px -10px, -10px 0px';
                 wrapper.style.backgroundColor = 'white';
-            } else if (pattern === 'white') {
-                wrapper.style.background = 'white';
-                wrapper.style.backgroundImage = 'none';
             } else if (pattern === 'dark') {
-                wrapper.style.background = '#333';
-                wrapper.style.backgroundImage = 'none';
+                // Dark checkerboard
+                wrapper.style.backgroundImage = 'linear-gradient(45deg, #333 25%, transparent 25%), linear-gradient(-45deg, #333 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #333 75%), linear-gradient(-45deg, transparent 75%, #333 75%)';
+                wrapper.style.backgroundSize = '20px 20px';
+                wrapper.style.backgroundPosition = '0 0, 0 10px, 10px -10px, -10px 0px';
+                wrapper.style.backgroundColor = '#1a1a1a';
             } else if (pattern === 'normal') {
                 wrapper.style.background = '#8fb4d8'; // LINE default blue
                 wrapper.style.backgroundImage = 'none';
