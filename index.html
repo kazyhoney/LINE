@@ -814,6 +814,7 @@
             history = [ctx.getImageData(0, 0, editorCanvas.width, editorCanvas.height)]; // Reset history
             backgroundRemoved = false;
             toleranceChanged = false;
+            showReRemoveAfterUndo = false;
             updateButtons();
         }
 
@@ -826,6 +827,7 @@
 
         let backgroundRemoved = false; // Track if background was removed
         let toleranceChanged = false;  // Track if slider was adjusted after removal
+        let showReRemoveAfterUndo = false; // Track if we should show re-remove button after undo
 
         function undo() {
             if (history.length <= 1) return;
@@ -835,6 +837,7 @@
 
             backgroundRemoved = false;
             toleranceChanged = false;
+            showReRemoveAfterUndo = true;
             updateButtons();
         }
 
@@ -855,7 +858,12 @@
             } else {
                 // Initial state - only undo button, disabled
                 undoBtn.classList.remove('hidden');
-                reRemoveBtn.classList.add('hidden');
+                if (showReRemoveAfterUndo) {
+                    reRemoveBtn.classList.remove('hidden');
+                    reRemoveBtn.disabled = false;
+                } else {
+                    reRemoveBtn.classList.add('hidden');
+                }
                 undoBtn.disabled = history.length <= 1;
             }
         }
@@ -889,6 +897,7 @@
 
             backgroundRemoved = true;
             toleranceChanged = false;
+            showReRemoveAfterUndo = false;
             updateButtons();
         }
 
@@ -1385,32 +1394,11 @@
             // Auto Remove Button
             const detailAutoRemoveBtn = document.getElementById('detailAutoRemoveBtn');
             if (detailAutoRemoveBtn) {
-                detailAutoRemoveBtn.addEventListener('click', applyDetailAutoRemoval);
+                // Use onclick to avoid multiple listeners
+                detailAutoRemoveBtn.onclick = applyDetailAutoRemoval;
             }
 
-            function applyDetailAutoRemoval() {
-                if (currentEditingIndex === -1) return;
-
-                // Use global tolerance value
-                const tolerance = parseInt(toleranceRange.value) || 10;
-
-                // Apply flood fill to 4 corners
-                const corners = [
-                    { x: 0, y: 0 },
-                    { x: detailCanvas.width - 1, y: 0 },
-                    { x: 0, y: detailCanvas.height - 1 },
-                    { x: detailCanvas.width - 1, y: detailCanvas.height - 1 }
-                ];
-
-                corners.forEach(p => {
-                    floodFill(p.x, p.y, tolerance, detailCtx, detailCanvas.width, detailCanvas.height);
-                });
-
-                saveDetailHistory('auto_remove');
-                // updateDetailPreview(); // Update preview if needed - not needed here, saveDetailHistory will redraw
-            }
-
-            // Tool Selectiontainer (canvas-container) already does this with justify-center items-center
+            // Tool Selection
 
             // However, we need to make sure the canvas wrapper has the correct size for the transform
             // Actually, we are transforming detailCanvas directly. 
@@ -1646,6 +1634,27 @@
         function switchTool(tool) {
             currentTool = tool;
             updateDetailEditorUI();
+        }
+
+        function applyDetailAutoRemoval() {
+            if (currentEditingIndex === -1) return;
+
+            // Use global tolerance value
+            const tolerance = parseInt(toleranceRange.value) || 10;
+
+            // Apply flood fill to 4 corners
+            const corners = [
+                { x: 0, y: 0 },
+                { x: detailCanvas.width - 1, y: 0 },
+                { x: 0, y: detailCanvas.height - 1 },
+                { x: detailCanvas.width - 1, y: detailCanvas.height - 1 }
+            ];
+
+            corners.forEach(p => {
+                floodFill(p.x, p.y, tolerance, detailCtx, detailCanvas.width, detailCanvas.height);
+            });
+
+            saveDetailHistory('auto_remove');
         }
 
         function updateDetailEditorUI() {
