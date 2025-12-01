@@ -990,7 +990,7 @@
 
         // --- Logic ---
 
-        function getContentBoundingBox(ctx, width, height) {
+        function getContentBoundingBox(ctx, width, height, threshold = 20) {
             const imgData = ctx.getImageData(0, 0, width, height);
             const data = imgData.data;
             let minX = width, minY = height, maxX = 0, maxY = 0, found = false;
@@ -998,7 +998,7 @@
             for (let y = 0; y < height; y++) {
                 for (let x = 0; x < width; x++) {
                     const i = (y * width + x) * 4;
-                    if (data[i + 3] > 20) { // Alpha threshold
+                    if (data[i + 3] > threshold) { // Use custom threshold
                         if (x < minX) minX = x;
                         if (x > maxX) maxX = x;
                         if (y < minY) minY = y;
@@ -1207,7 +1207,8 @@
 
                 // Calculate auto-center position
                 let initialPosition = { x: 0, y: 0 };
-                const bbox = getContentBoundingBox(tempCtx, SPECS.sticker.w, SPECS.sticker.h);
+                // Use stricter threshold (128) to ignore faint noise/shadows for centering
+                const bbox = getContentBoundingBox(tempCtx, SPECS.sticker.w, SPECS.sticker.h, 128);
 
                 if (bbox) {
                     // Calculate object center
