@@ -343,20 +343,32 @@
                     <!-- Background Pattern -->
                     <div class="bg-gray-50 p-4 rounded">
                         <label class="block text-xs font-bold text-gray-700 mb-2">背景パターン</label>
-                        <div class="grid grid-cols-2 gap-2">
+                        <div class="grid grid-cols-3 gap-2">
+                            <button
+                                class="bg-pattern-btn px-3 py-2 text-xs bg-white border-2 border-gray-300 rounded hover:bg-green-50 transition"
+                                data-pattern="light">明るい</button>
+                            <button
+                                class="bg-pattern-btn px-3 py-2 text-xs bg-white border-2 border-gray-300 rounded hover:bg-green-50 transition"
+                                data-pattern="normal">標準</button>
                             <button
                                 class="bg-pattern-btn px-3 py-2 text-xs bg-white border-2 border-green-500 rounded hover:bg-green-50 transition"
-                                data-pattern="checker">市松模様</button>
-                            <button
-                                class="bg-pattern-btn px-3 py-2 text-xs bg-white border-2 border-gray-300 rounded hover:bg-green-50 transition"
-                                data-pattern="dark">暗い背景</button>
-                            <button
-                                class="bg-pattern-btn px-3 py-2 text-xs bg-white border-2 border-gray-300 rounded hover:bg-green-50 transition"
-                                data-pattern="white">明るい背景</button>
-                            <button
-                                class="bg-pattern-btn px-3 py-2 text-xs bg-white border-2 border-gray-300 rounded hover:bg-green-50 transition"
-                                data-pattern="none">なし</button>
+                                data-pattern="dark">暗い</button>
                         </div>
+                    </div>
+
+                    <!-- Completion Image Preview -->
+                    <div class="bg-gray-50 p-4 rounded">
+                        <label class="block text-xs font-bold text-gray-700 mb-2">完成イメージ</label>
+                        <button id="showDetailPreviewBtn"
+                            class="w-full px-3 py-2 text-sm bg-green-500 text-white rounded hover:bg-green-600 transition flex items-center justify-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                <circle cx="12" cy="12" r="3" />
+                            </svg>
+                            プレビュー表示
+                        </button>
                     </div>
 
                     <!-- Position Controls (only visible when move tool is selected) -->
@@ -439,6 +451,109 @@
 
     </main>
 
+    <!-- Detail Editor Preview Modal -->
+    <div id="detailPreviewModal"
+        class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg p-6 max-w-2xl">
+            <!-- Modal Header -->
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-gray-800">完成イメージプレビュー</h3>
+                <button id="closeDetailPreviewBtn" class="text-gray-500 hover:text-gray-700 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Background Switcher -->
+            <div class="flex justify-center gap-2 mb-4">
+                <button
+                    class="preview-switch-btn px-4 py-2 text-sm bg-white border-2 border-gray-300 rounded hover:bg-gray-50 transition"
+                    data-bg="light">明るい</button>
+                <button
+                    class="preview-switch-btn px-4 py-2 text-sm bg-white border-2 border-green-500 rounded hover:bg-gray-50 transition"
+                    data-bg="normal">標準</button>
+                <button
+                    class="preview-switch-btn px-4 py-2 text-sm bg-white border-2 border-gray-300 rounded hover:bg-gray-50 transition"
+                    data-bg="dark">暗い</button>
+            </div>
+
+            <!-- Smartphone Mockup -->
+            <div class="flex justify-center">
+                <div class="relative" style="width: 375px;">
+                    <!-- Phone Frame -->
+                    <div class="bg-gray-900 rounded-[3rem] p-3 shadow-2xl">
+                        <!-- Screen -->
+                        <div class="bg-black rounded-[2.5rem] overflow-hidden relative" style="height: 667px;">
+                            <!-- LINE Screen Content -->
+                            <div class="h-full flex flex-col">
+                                <!-- LINE Header -->
+                                <div
+                                    class="bg-white border-b border-gray-200 p-3 flex items-center gap-3 relative z-20">
+                                    <button class="text-gray-600">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M15 18l-6-6 6-6" />
+                                        </svg>
+                                    </button>
+                                    <div class="flex-1 text-center">
+                                        <div class="font-bold text-gray-800">完成イメージ</div>
+                                    </div>
+                                    <button class="text-gray-600">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round">
+                                            <circle cx="12" cy="12" r="1" />
+                                            <circle cx="12" cy="5" r="1" />
+                                            <circle cx="12" cy="19" r="1" />
+                                        </svg>
+                                    </button>
+                                </div>
+
+                                <!-- Chat Messages (Scrollable) -->
+                                <div id="previewChatMobile" class="flex-1 p-4 space-y-3 overflow-y-auto"
+                                    style="background: #8fb4d8;">
+                                    <!-- Content will be inserted by JavaScript -->
+                                </div>
+
+                                <!-- Chat Input -->
+                                <div class="bg-white border-t border-gray-200 p-3">
+                                    <div class="flex items-center gap-2">
+                                        <button class="text-gray-500">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                                stroke-linecap="round" stroke-linejoin="round">
+                                                <circle cx="12" cy="12" r="10" />
+                                                <line x1="12" y1="8" x2="12" y2="12" />
+                                                <line x1="12" y1="16" x2="12.01" y2="16" />
+                                            </svg>
+                                        </button>
+                                        <div class="flex-1 bg-gray-100 rounded-full px-4 py-2">
+                                            <input type="text" placeholder="メッセージ"
+                                                class="w-full bg-transparent text-sm outline-none" disabled>
+                                        </div>
+                                        <button class="text-gray-500">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                                stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                                <polyline points="17 8 12 3 7 8" />
+                                                <line x1="12" y1="3" x2="12" y2="15" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         // DOM Elements
         const imageInput = document.getElementById('imageInput');
@@ -503,7 +618,7 @@
         let isDragging = false;
         let dragStart = { x: 0, y: 0 };
         let dragStartImageData = null; // For move tool baking
-        let currentBgPattern = 'checker'; // Background pattern for detail editor
+        let currentBgPattern = 'dark'; // Background pattern for detail editor (default: dark)
 
         // Cell editor states: stores edited image data and position for each cell
         let cellEditorStates = {};
@@ -1090,6 +1205,9 @@
             updateDetailEditorUI();
             updateNavigationButtons();
 
+            // Initialize with Dark background pattern (default)
+            setBackgroundPattern('dark');
+
             // Only set default tool on first use
             if (!currentTool) {
                 switchTool('magicWand');
@@ -1363,21 +1481,14 @@
             });
 
             switch (pattern) {
-                case 'checker':
-                    // Better checkerboard pattern (16x16px)
-                    const checkerSvg = `data:image/svg+xml,${encodeURIComponent(
-                        '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><rect width="16" height="16" fill="#e0e0e0"/><rect x="16" y="16" width="16" height="16" fill="#e0e0e0"/><rect x="16" width="16" height="16" fill="#f5f5f5"/><rect y="16" width="16" height="16" fill="#f5f5f5"/></svg>'
-                    )}`;
-                    container.style.background = `url("${checkerSvg}") repeat`;
-                    break;
-                case 'dark':
-                    container.style.background = '#2a2a2a';
-                    break;
-                case 'white':
+                case 'light':
                     container.style.background = '#ffffff';
                     break;
-                case 'none':
-                    container.style.background = 'transparent';
+                case 'normal':
+                    container.style.background = '#8fb4d8';
+                    break;
+                case 'dark':
+                    container.style.background = '#1a1a1a';
                     break;
             }
         }
@@ -1695,8 +1806,8 @@
                 if (msg.type === 'text') {
                     const bubble = document.createElement('div');
                     bubble.className = `px-3 py-2 rounded-2xl max-w-xs ${msg.isUser
-                            ? 'bg-white text-gray-800'
-                            : 'bg-green-500 text-white'
+                        ? 'bg-white text-gray-800'
+                        : 'bg-green-500 text-white'
                         }`;
                     bubble.textContent = msg.content;
 
@@ -1783,6 +1894,146 @@
             btn.addEventListener('click', () => {
                 setPreviewBackground(btn.dataset.bg);
             });
+        });
+
+        // ===== DETAIL EDITOR PREVIEW MODAL =====
+
+        const detailPreviewModal = document.getElementById('detailPreviewModal');
+        const showDetailPreviewBtn = document.getElementById('showDetailPreviewBtn');
+        const closeDetailPreviewBtn = document.getElementById('closeDetailPreviewBtn');
+        let currentMobilePreviewBg = 'normal';
+
+        function showDetailPreview() {
+            if (!detailCtx || currentEditingIndex === -1) {
+                alert('スティッカーを編集してください');
+                return;
+            }
+
+            // Get current sticker as data URL
+            const stickerDataURL = detailCanvas.toDataURL();
+
+            // Populate mobile preview
+            populateMobilePreview(stickerDataURL, currentMobilePreviewBg);
+
+            // Show modal
+            detailPreviewModal.classList.remove('hidden');
+        }
+
+        function populateMobilePreview(stickerDataURL, bgType) {
+            const container = document.getElementById('previewChatMobile');
+            if (!container) return;
+
+            // Set background
+            switch (bgType) {
+                case 'light':
+                    container.style.background = '#ffffff';
+                    break;
+                case 'normal':
+                    container.style.background = '#8fb4d8';
+                    break;
+                case 'dark':
+                    container.style.background = '#1a1a1a';
+                    break;
+            }
+
+            // Clear previous content
+            container.innerHTML = '';
+
+            // Create sample messages
+            const messages = [
+                { type: 'text', content: 'Hello', isUser: true },
+                { type: 'sticker', content: stickerDataURL, isUser: true },
+                { type: 'sticker', content: stickerDataURL, isUser: false },
+            ];
+
+            messages.forEach(msg => {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `flex ${msg.isUser ? 'justify-start' : 'justify-end'}`;
+
+                if (msg.type === 'text') {
+                    const bubble = document.createElement('div');
+                    bubble.className = `px-3 py-2 rounded-2xl text-sm ${msg.isUser
+                        ? 'bg-white text-gray-800'
+                        : 'bg-green-500 text-white'
+                        }`;
+                    bubble.textContent = msg.content;
+
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'flex items-end gap-2';
+
+                    if (msg.isUser) {
+                        const avatar = document.createElement('div');
+                        avatar.className = 'w-8 h-8 rounded-full bg-green-500 flex-shrink-0 flex items-center justify-center';
+                        avatar.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>`;
+                        wrapper.appendChild(avatar);
+                    }
+
+                    wrapper.appendChild(bubble);
+                    messageDiv.appendChild(wrapper);
+                } else if (msg.type === 'sticker') {
+                    const stickerImg = document.createElement('img');
+                    stickerImg.src = msg.content;
+                    stickerImg.className = 'max-w-[150px] max-h-[150px]';
+                    stickerImg.style.imageRendering = 'crisp-edges';
+
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'flex items-end gap-2';
+
+                    if (msg.isUser) {
+                        const avatar = document.createElement('div');
+                        avatar.className = 'w-8 h-8 rounded-full bg-green-500 flex-shrink-0 flex items-center justify-center';
+                        avatar.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>`;
+                        wrapper.appendChild(avatar);
+                    }
+
+                    wrapper.appendChild(stickerImg);
+                    messageDiv.appendChild(wrapper);
+                }
+
+                container.appendChild(messageDiv);
+            });
+        }
+
+        function switchMobilePreviewBg(bgType) {
+            currentMobilePreviewBg = bgType;
+
+            // Update button states
+            document.querySelectorAll('.preview-switch-btn').forEach(btn => {
+                if (btn.dataset.bg === bgType) {
+                    btn.classList.add('border-green-500');
+                    btn.classList.remove('border-gray-300');
+                } else {
+                    btn.classList.remove('border-green-500');
+                    btn.classList.add('border-gray-300');
+                }
+            });
+
+            // Regenerate preview with new background
+            if (!detailCtx || currentEditingIndex === -1) return;
+            const stickerDataURL = detailCanvas.toDataURL();
+            populateMobilePreview(stickerDataURL, bgType);
+        }
+
+        function closeDetailPreview() {
+            detailPreviewModal.classList.add('hidden');
+        }
+
+        // Event listeners for detail preview modal
+        showDetailPreviewBtn?.addEventListener('click', showDetailPreview);
+        closeDetailPreviewBtn?.addEventListener('click', closeDetailPreview);
+
+        // Background switcher buttons
+        document.querySelectorAll('.preview-switch-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                switchMobilePreviewBg(btn.dataset.bg);
+            });
+        });
+
+        // Close modal on background click
+        detailPreviewModal?.addEventListener('click', (e) => {
+            if (e.target === detailPreviewModal) {
+                closeDetailPreview();
+            }
         });
     </script>
 </body>
