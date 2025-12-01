@@ -1532,6 +1532,7 @@
             const state = cellEditorStates[currentEditingIndex];
             state.position = { x: 0, y: 0 };
             updatePositionDisplay();
+            redrawCanvas(currentEditingIndex);
             saveDetailHistory();
         }
 
