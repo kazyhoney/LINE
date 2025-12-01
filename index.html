@@ -1728,6 +1728,28 @@
         }
 
         // Canvas interaction for detail editor
+        // Helper to redraw canvas from state (Non-destructive)
+        function redrawCanvas(index) {
+            if (index === -1 || !cellEditorStates[index]) return;
+
+            const state = cellEditorStates[index];
+            const imgData = state.imageData;
+
+            // Clear canvas
+            detailCtx.clearRect(0, 0, detailCanvas.width, detailCanvas.height);
+
+            // Create a temporary canvas to hold the image data
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = detailCanvas.width;
+            tempCanvas.height = detailCanvas.height;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.putImageData(imgData, 0, 0);
+
+            // Draw the temporary canvas onto the detail canvas at the specified position
+            detailCtx.drawImage(tempCanvas, state.position.x, state.position.y);
+        }
+
+        // Canvas interaction for detail editor
         detailCanvas?.addEventListener('mousedown', (e) => {
             const coords = getCanvasCoordinates(e, detailCanvas);
             const x = coords.x;
@@ -1736,8 +1758,7 @@
             if (currentTool === 'move') {
                 isDragging = true;
                 dragStart = { x: x, y: y };
-                // Capture current image data for baking
-                dragStartImageData = detailCtx.getImageData(0, 0, detailCanvas.width, detailCanvas.height);
+                // Non-destructive: No need to capture image data here
             } else if (currentTool === 'brush') {
                 applyBrush(x, y);
                 isDragging = true;
@@ -1758,21 +1779,24 @@
             const y = coords.y;
 
             if (currentTool === 'move') {
-                // Destructive Move (Baking)
+                // Non-Destructive Move
                 const dx = x - dragStart.x;
                 const dy = y - dragStart.y;
 
-                // Clear and redraw at new position
-                detailCtx.clearRect(0, 0, detailCanvas.width, detailCanvas.height);
-                detailCtx.putImageData(dragStartImageData, dx, dy);
+                // Update position in state
+                const state = cellEditorStates[currentEditingIndex];
+                state.position.x += dx;
+                state.position.y += dy;
 
-                // Update position display (relative to start)
-                // Note: This is just for display, the actual pixels are moving
-                // We could track total offset if we wanted, but for now just showing delta might be confusing
-                // Let's just update X/Y if we were tracking absolute position, but here we are baking.
-                // Maybe show delta?
-                posXDisplay.innerText = Math.round(dx);
-                posYDisplay.innerText = Math.round(dy);
+                // Redraw
+                redrawCanvas(currentEditingIndex);
+
+                // Update drag start for next frame (continuous delta)
+                dragStart = { x: x, y: y };
+
+                // Update display
+                posXDisplay.innerText = Math.round(state.position.x);
+                posYDisplay.innerText = Math.round(state.position.y);
 
             } else if (currentTool === 'brush') {
                 applyBrush(x, y);
