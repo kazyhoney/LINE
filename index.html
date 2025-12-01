@@ -229,10 +229,8 @@
                             <div class="absolute top-1/2 left-0 w-full h-px bg-red-500/50"></div>
                             <div class="absolute left-1/2 top-0 h-full w-px bg-red-500/50"></div>
                         </div>
-                        <canvas id="detailCanvas"
-                            class="absolute shadow-lg bg-[url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAMUlEQVQ4T2NkYGAQYcAP3uCTZhw1gGGYhAGBZIA/nYDCgBDAm9BGDWAAJyRCgLaBCAAgXwixzAS0pgAAAABJRU5ErkJggg==')]"
-                            style="cursor: crosshair;"></canvas>
-                        <div id="detailCanvasWrapper" style="position: absolute; transform-origin: center center;">
+                        <canvas id="detailCanvas" class="absolute shadow-lg z-10" style="cursor: crosshair;"></canvas>
+                        <div id="detailCanvasWrapper" class="absolute z-0" style="transform-origin: center center;">
                         </div>
                     </div>
                 </div>
@@ -351,16 +349,19 @@
                     <!-- Background Pattern -->
                     <div class="bg-gray-50 p-4 rounded">
                         <label class="block text-xs font-bold text-gray-700 mb-2">背景パターン</label>
-                        <div class="grid grid-cols-3 gap-2">
+                        <div class="grid grid-cols-4 gap-2">
                             <button
-                                class="bg-pattern-btn px-3 py-2 text-xs bg-white border-2 border-gray-300 rounded hover:bg-green-50 transition"
-                                data-pattern="light">明るい</button>
+                                class="bg-pattern-btn px-2 py-2 text-xs bg-white border-2 border-gray-300 rounded hover:bg-green-50 transition"
+                                data-pattern="transparent">透過</button>
                             <button
-                                class="bg-pattern-btn px-3 py-2 text-xs bg-white border-2 border-gray-300 rounded hover:bg-green-50 transition"
-                                data-pattern="normal">標準</button>
+                                class="bg-pattern-btn px-2 py-2 text-xs bg-white border-2 border-gray-300 rounded hover:bg-green-50 transition"
+                                data-pattern="white">白</button>
                             <button
-                                class="bg-pattern-btn px-3 py-2 text-xs bg-white border-2 border-green-500 rounded hover:bg-green-50 transition"
-                                data-pattern="dark">暗い</button>
+                                class="bg-pattern-btn px-2 py-2 text-xs bg-white border-2 border-gray-300 rounded hover:bg-green-50 transition"
+                                data-pattern="dark">黒</button>
+                            <button
+                                class="bg-pattern-btn px-2 py-2 text-xs bg-white border-2 border-green-500 rounded hover:bg-green-50 transition"
+                                data-pattern="normal">LINE</button>
                         </div>
                     </div>
 
@@ -1246,6 +1247,14 @@
             // Setup detail canvas
             detailCanvas.width = SPECS.sticker.w;
             detailCanvas.height = SPECS.sticker.h;
+
+            // Sync wrapper size
+            const wrapper = document.getElementById('detailCanvasWrapper');
+            if (wrapper) {
+                wrapper.style.width = detailCanvas.width + 'px';
+                wrapper.style.height = detailCanvas.height + 'px';
+            }
+
             detailCtx = detailCanvas.getContext('2d', { willReadFrequently: true });
             detailCtx.putImageData(cellEditorStates[index].imageData, 0, 0);
 
@@ -1553,6 +1562,13 @@
             // Apply zoom transform
             detailCanvas.style.transform = `scale(${zoom})`;
             detailCanvas.style.transformOrigin = 'center center';
+
+            // Apply to wrapper as well
+            const wrapper = document.getElementById('detailCanvasWrapper');
+            if (wrapper) {
+                wrapper.style.transform = `scale(${zoom})`;
+                wrapper.style.transformOrigin = 'center center';
+            }
         }
 
         // --- Hand Tool & Pan Logic ---
