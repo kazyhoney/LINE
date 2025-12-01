@@ -1206,30 +1206,38 @@
                 tempCtx.drawImage(editorCanvas, c * cellW, r * cellH, cellW, cellH, 0, 0, SPECS.sticker.w, SPECS.sticker.h);
 
                 // Calculate auto-center position
-                let initialPosition = { x: 0, y: 0 };
                 // Use stricter threshold (128) to ignore faint noise/shadows for centering
                 const bbox = getContentBoundingBox(tempCtx, SPECS.sticker.w, SPECS.sticker.h, 128);
 
+                let finalImageData;
+
                 if (bbox) {
-                    // Calculate object center
-                    const objectCenterX = bbox.x + bbox.w / 2;
-                    const objectCenterY = bbox.y + bbox.h / 2;
+                    // Create a new canvas for the centered image
+                    const centeredCanvas = document.createElement('canvas');
+                    centeredCanvas.width = SPECS.sticker.w;
+                    centeredCanvas.height = SPECS.sticker.h;
+                    const centeredCtx = centeredCanvas.getContext('2d');
 
-                    // Calculate canvas center
-                    const canvasCenterX = SPECS.sticker.w / 2;
-                    const canvasCenterY = SPECS.sticker.h / 2;
+                    // Draw the trimmed content at the center of the new canvas
+                    const targetX = Math.round((SPECS.sticker.w - bbox.w) / 2);
+                    const targetY = Math.round((SPECS.sticker.h - bbox.h) / 2);
 
-                    // Calculate offset to center the object
-                    initialPosition = {
-                        x: Math.round(canvasCenterX - objectCenterX),
-                        y: Math.round(canvasCenterY - objectCenterY)
-                    };
+                    centeredCtx.drawImage(
+                        tempCanvas,
+                        bbox.x, bbox.y, bbox.w, bbox.h, // Source: trimmed area
+                        targetX, targetY, bbox.w, bbox.h // Destination: center
+                    );
+
+                    finalImageData = centeredCtx.getImageData(0, 0, SPECS.sticker.w, SPECS.sticker.h);
+                } else {
+                    // Fallback if empty
+                    finalImageData = tempCtx.getImageData(0, 0, SPECS.sticker.w, SPECS.sticker.h);
                 }
 
                 cellEditorStates[index] = {
-                    imageData: tempCtx.getImageData(0, 0, SPECS.sticker.w, SPECS.sticker.h),
-                    originalImageData: originalCtx.getImageData(0, 0, SPECS.sticker.w, SPECS.sticker.h), // NEW
-                    position: initialPosition,
+                    imageData: finalImageData,
+                    originalImageData: originalCtx.getImageData(0, 0, SPECS.sticker.w, SPECS.sticker.h),
+                    position: { x: 0, y: 0 }, // Position is now 0,0 because image is centered
                     history: [],
                     historyIndex: -1
                 };
