@@ -302,10 +302,10 @@
                                     <line x1="2" y1="12" x2="22" y2="12"></line>
                                     <line x1="12" y1="2" x2="12" y2="22"></line>
                                 </svg>
-                                <span class="text-sm">移動ツール</span>
+                                <span class="text-sm">配置ツール</span>
                             </button>
                         </div>
-                        <div class="text-xs text-gray-500 mt-2">V: 移動 / B: ブラシ / W: 自動透過</div>
+                        <div class="text-xs text-gray-500 mt-2">V: 配置 / B: ブラシ / W: 自動透過</div>
                     </div>
 
                     <!-- Brush Size (only visible when brush tool is selected) -->
@@ -1307,7 +1307,14 @@
             updateGrid();
         }
 
+        function handleDetailMouseDown(e) {
+            if (isHandToolActive) return; // Skip if panning
+
+            isDrawing = true;
+        }
+
         function saveDetailHistory() {
+            if (isHandToolActive) return; // Prevent tool action if Hand Tool is active
             if (currentEditingIndex === -1) return;
 
             const state = cellEditorStates[currentEditingIndex];
@@ -1547,11 +1554,81 @@
             detailCanvas.style.transformOrigin = 'center center';
         }
 
-        function setBackgroundPattern(pattern) {
-            currentBgPattern = pattern;
-            const container = document.querySelector('#detailEditor .canvas-container');
+        // --- Hand Tool & Pan Logic ---
+        const handToolBtn = document.getElementById('handToolBtn');
+        let isHandToolActive = false;
+        let isPanning = false;
+        let startPanX = 0;
+        let startPanY = 0;
+        let scrollStartX = 0;
+        let scrollStartY = 0;
 
-            // Update button states
+        if (handToolBtn) {
+            handToolBtn.addEventListener('click', () => {
+                isHandToolActive = !isHandToolActive;
+                updateHandToolUI();
+            });
+        }
+
+        function updateHandToolUI() {
+            if (isHandToolActive) {
+                handToolBtn.classList.add('bg-green-100', 'text-green-600', 'border-green-500');
+                detailCanvas.style.cursor = 'grab';
+            } else {
+                handToolBtn.classList.remove('bg-green-100', 'text-green-600', 'border-green-500');
+                updateCursor(); // Restore tool cursor
+            }
+        }
+
+        function updateCursor() {
+            if (isHandToolActive) {
+                detailCanvas.style.cursor = 'grab';
+            } else if (currentTool === 'move') {
+                detailCanvas.style.cursor = 'move';
+            } else if (currentTool === 'brush') {
+                updateBrushCursor();
+            } else if (currentTool === 'magicWand') {
+                detailCanvas.style.cursor = 'crosshair';
+            }
+        }
+
+        const detailContainer = detailEditor.querySelector('.canvas-container');
+
+        detailContainer.addEventListener('mousedown', (e) => {
+            if (isHandToolActive) {
+                isPanning = true;
+                detailCanvas.style.cursor = 'grabbing';
+                startPanX = e.clientX;
+                startPanY = e.clientY;
+                scrollStartX = detailContainer.scrollLeft;
+                scrollStartY = detailContainer.scrollTop;
+                e.preventDefault(); // Prevent text selection
+            }
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (isPanning && isHandToolActive) {
+                const dx = e.clientX - startPanX;
+                const dy = e.clientY - startPanY;
+                detailContainer.scrollLeft = scrollStartX - dx;
+                detailContainer.scrollTop = scrollStartY - dy;
+            }
+        });
+
+        window.addEventListener('mouseup', () => {
+            if (isPanning) {
+                isPanning = false;
+                if (isHandToolActive) detailCanvas.style.cursor = 'grab';
+            }
+        });
+
+        // --- Background Pattern Persistence ---
+        let currentBgPattern = 'dark'; // Default pattern
+
+        function setBackgroundPattern(pattern) {
+            currentBgPattern = pattern; // Update current pattern
+
+            // Update buttons UI
             document.querySelectorAll('.bg-pattern-btn').forEach(btn => {
                 if (btn.dataset.pattern === pattern) {
                     btn.classList.add('border-green-500');
@@ -1562,16 +1639,24 @@
                 }
             });
 
-            switch (pattern) {
-                case 'light':
-                    container.style.background = '#ffffff';
-                    break;
-                case 'normal':
-                    container.style.background = '#8fb4d8';
-                    break;
-                case 'dark':
-                    container.style.background = '#1a1a1a';
-                    break;
+            // Update canvas background
+            const wrapper = document.getElementById('detailCanvasWrapper');
+            wrapper.className = 'relative'; // Reset
+
+            if (pattern === 'transparent') {
+                wrapper.style.backgroundImage = 'linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)';
+                wrapper.style.backgroundSize = '20px 20px';
+                wrapper.style.backgroundPosition = '0 0, 0 10px, 10px -10px, -10px 0px';
+                wrapper.style.backgroundColor = 'white';
+            } else if (pattern === 'white') {
+                wrapper.style.background = 'white';
+                wrapper.style.backgroundImage = 'none';
+            } else if (pattern === 'dark') {
+                wrapper.style.background = '#333';
+                wrapper.style.backgroundImage = 'none';
+            } else if (pattern === 'normal') {
+                wrapper.style.background = '#8fb4d8'; // LINE default blue
+                wrapper.style.backgroundImage = 'none';
             }
         }
 
@@ -1901,8 +1986,8 @@
             linePreview.classList.remove('hidden');
             linePreview.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
-            // Set default background
-            setPreviewBackground('dark');
+            // Set initial background
+            setBackgroundPattern(currentPattern);
         }
 
         function setPreviewBackground(bg) {
