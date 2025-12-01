@@ -297,6 +297,25 @@
                     <div class="bg-gray-50 p-2 lg:p-3 rounded">
                         <label class="block text-xs font-bold text-gray-700 mb-2">ツール & 履歴</label>
 
+                        <!-- Auto Remove Button -->
+                        <button id="detailAutoRemoveBtn"
+                            class="w-full mb-2 px-3 py-2 text-xs bg-white border border-green-500 text-green-600 rounded hover:bg-green-50 transition font-bold flex items-center justify-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M15 4V2"></path>
+                                <path d="M15 16v-2"></path>
+                                <path d="M8 9h2"></path>
+                                <path d="M20 9h2"></path>
+                                <path d="M17.8 11.8 19 13"></path>
+                                <path d="M15 9h0"></path>
+                                <path d="M17.8 6.2 19 5"></path>
+                                <path d="m3 21 9-9"></path>
+                                <path d="M12.2 6.2 11 5"></path>
+                            </svg>
+                            背景を自動除去
+                        </button>
+
                         <!-- Tools Row -->
                         <div class="flex gap-2 mb-3">
                             <button id="toolMagicWand"
@@ -1363,7 +1382,35 @@
 
             // Center the canvas wrapper
             // Since transform-origin is center center, we just need to ensure the wrapper is centered in the flex container
-            // The flex container (canvas-container) already does this with justify-center items-center
+            // Auto Remove Button
+            const detailAutoRemoveBtn = document.getElementById('detailAutoRemoveBtn');
+            if (detailAutoRemoveBtn) {
+                detailAutoRemoveBtn.addEventListener('click', applyDetailAutoRemoval);
+            }
+
+            function applyDetailAutoRemoval() {
+                if (currentEditingIndex === -1) return;
+
+                // Use global tolerance value
+                const tolerance = parseInt(toleranceRange.value) || 10;
+
+                // Apply flood fill to 4 corners
+                const corners = [
+                    { x: 0, y: 0 },
+                    { x: detailCanvas.width - 1, y: 0 },
+                    { x: 0, y: detailCanvas.height - 1 },
+                    { x: detailCanvas.width - 1, y: detailCanvas.height - 1 }
+                ];
+
+                corners.forEach(p => {
+                    floodFill(p.x, p.y, tolerance, detailCtx, detailCanvas.width, detailCanvas.height);
+                });
+
+                saveDetailHistory('auto_remove');
+                // updateDetailPreview(); // Update preview if needed - not needed here, saveDetailHistory will redraw
+            }
+
+            // Tool Selectiontainer (canvas-container) already does this with justify-center items-center
 
             // However, we need to make sure the canvas wrapper has the correct size for the transform
             // Actually, we are transforming detailCanvas directly. 
@@ -1402,7 +1449,7 @@
             isDrawing = true;
         }
 
-        function saveDetailHistory() {
+        function saveDetailHistory(actionType = 'edit') {
             if (isHandToolActive) return; // Prevent tool action if Hand Tool is active
             if (currentEditingIndex === -1) return;
 
@@ -1416,7 +1463,8 @@
             const imageData = detailCtx.getImageData(0, 0, detailCanvas.width, detailCanvas.height);
             state.history.push({
                 imageData: imageData,
-                position: { ...state.position }
+                position: { ...state.position },
+                type: actionType
             });
             state.historyIndex = state.history.length - 1;
 
@@ -1495,6 +1543,45 @@
             const state = cellEditorStates[currentEditingIndex];
             detailUndoBtn.disabled = state.historyIndex <= 0;
             detailRedoBtn.disabled = state.historyIndex >= state.history.length - 1;
+
+            // Update Auto Remove Button Text based on next history item
+            const detailAutoRemoveBtn = document.getElementById('detailAutoRemoveBtn');
+            if (detailAutoRemoveBtn) {
+                const nextState = state.history[state.historyIndex + 1];
+                if (nextState && nextState.type === 'auto_remove') {
+                    detailAutoRemoveBtn.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M15 4V2"></path>
+                    <path d="M15 16v-2"></path>
+                    <path d="M8 9h2"></path>
+                    <path d="M20 9h2"></path>
+                    <path d="M17.8 11.8 19 13"></path>
+                    <path d="M15 9h0"></path>
+                    <path d="M17.8 6.2 19 5"></path>
+                    <path d="m3 21 9-9"></path>
+                    <path d="M12.2 6.2 11 5"></path>
+                </svg>
+                背景を再除去
+            `;
+                } else {
+                    detailAutoRemoveBtn.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M15 4V2"></path>
+                    <path d="M15 16v-2"></path>
+                    <path d="M8 9h2"></path>
+                    <path d="M20 9h2"></path>
+                    <path d="M17.8 11.8 19 13"></path>
+                    <path d="M15 9h0"></path>
+                    <path d="M17.8 6.2 19 5"></path>
+                    <path d="m3 21 9-9"></path>
+                    <path d="M12.2 6.2 11 5"></path>
+                </svg>
+                背景を自動除去
+            `;
+                }
+            }
         }
 
         function updateNavigationButtons() {
