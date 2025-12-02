@@ -211,7 +211,7 @@
 
                 <button id="generateBtn" disabled
                     class="w-full bg-green-600 text-white font-bold py-3 px-4 rounded shadow-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition flex justify-center items-center gap-2 order-5">
-                    <span id="btnText">変換＆ZIP作成</span>
+                    <span id="btnText">画像を保存</span>
                 </button>
                 <div id="statusContainer" class="hidden text-center order-6" style="display: none;">
                     <div class="loader mb-2"></div>
@@ -1130,10 +1130,9 @@
                 processImage.src = editorCanvas.toDataURL();
                 await new Promise(r => processImage.onload = r);
 
-                statusMsg.innerText = "スタンプ画像を分割・生成中...";
+                statusMsg.innerText = "画像を生成中...";
                 await new Promise(r => setTimeout(r, 100));
 
-                const zip = new JSZip();
                 const cols = parseInt(colInput.value);
                 const rows = parseInt(rowInput.value);
                 const totalCells = cols * rows;
@@ -1143,7 +1142,8 @@
                 const shouldAutoCenter = autoCenterCheckbox.checked;
 
                 let outputIndex = 1; // Counter for output file names
-                const stickerDataURLs = []; // Store sticker images for preview
+                const filesToShare = []; // Store File objects for Web Share API
+                const zip = new JSZip(); // Always init zip for fallback
 
                 for (let i = 0; i < totalCells; i++) {
                     // Always process all cells
@@ -1226,10 +1226,13 @@
                     }
 
                     const fileName = `${outputIndex.toString().padStart(2, '0')}.png`;
-                    zip.file(fileName, await new Promise(r => stickerCanvas.toBlob(r)));
+                    const blob = await new Promise(r => stickerCanvas.toBlob(r, 'image/png'));
 
-                    // Store sticker for preview
-                    stickerDataURLs.push(stickerCanvas.toDataURL());
+                    // Add to ZIP
+                    zip.file(fileName, blob);
+
+                    // Add to Files for Share
+                    filesToShare.push(new File([blob], fileName, { type: 'image/png' }));
 
                     // Main/Tab
                     if (i === selectedMainIndex) {
@@ -1237,30 +1240,66 @@
                         mainCanvas.width = SPECS.main.w;
                         mainCanvas.height = SPECS.main.h;
                         drawCentered(mainCanvas, SPECS.main.w, SPECS.main.h, 0);
-                        zip.file("main.png", await new Promise(r => mainCanvas.toBlob(r)));
+                        const mainBlob = await new Promise(r => mainCanvas.toBlob(r, 'image/png'));
+                        zip.file("main.png", mainBlob);
+                        filesToShare.push(new File([mainBlob], "main.png", { type: 'image/png' }));
 
                         const tabCanvas = document.createElement('canvas');
                         tabCanvas.width = SPECS.tab.w;
                         tabCanvas.height = SPECS.tab.h;
                         drawCentered(tabCanvas, SPECS.tab.w, SPECS.tab.h, 0);
-                        zip.file("tab.png", await new Promise(r => tabCanvas.toBlob(r)));
+                        const tabBlob = await new Promise(r => tabCanvas.toBlob(r, 'image/png'));
+                        zip.file("tab.png", tabBlob);
+                        filesToShare.push(new File([tabBlob], "tab.png", { type: 'image/png' }));
                     }
 
                     outputIndex++; // Increment for next checked image
                 }
 
-                const content = await zip.generateAsync({ type: "blob" });
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(content);
-                link.download = "line_stickers.zip";
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
+                // Try Web Share API first
+                let shareSuccess = false;
+                if (navigator.canShare && navigator.canShare({ files: filesToShare })) {
+                    try {
+                        statusMsg.innerText = "画像を保存中...";
+                        await navigator.share({
+                            files: filesToShare,
+                            title: 'LINEスタンプ画像',
+                            text: '作成したLINEスタンプ画像です。'
+                        });
+                        shareSuccess = true;
+                        statusMsg.innerText = "保存しました！";
+                    } catch (err) {
+                        console.log('Share failed or canceled, falling back to ZIP', err);
+                        // If user canceled, we might not want to force download, but let's assume fallback is safer for now
+                        // or maybe just stop? Usually if user cancels share, they don't want download.
+                        // But if it failed for other reasons, download is good.
+                        if (err.name !== 'AbortError') {
+                            statusMsg.innerText = "共有に失敗しました。ZIPでダウンロードします。";
+                        } else {
+                            statusMsg.innerText = "保存をキャンセルしました。";
+                            // Don't download zip if user canceled share
+                            setTimeout(() => {
+                                statusContainer.classList.add('hidden');
+                                statusContainer.style.display = 'none';
+                                generateBtn.classList.remove('hidden');
+                                generateBtn.disabled = false;
+                            }, 2000);
+                            return;
+                        }
+                    }
+                }
 
-                statusMsg.innerText = "完了しました！";
-
-                // Show LINE Preview with stickers
-                // showLinePreview(stickerDataURLs);
+                if (!shareSuccess) {
+                    statusMsg.innerText = "ZIPファイルを作成中...";
+                    const content = await zip.generateAsync({ type: "blob" });
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(content);
+                    link.download = "line_stickers.zip";
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    statusMsg.innerText = "完了しました！";
+                }
 
                 setTimeout(() => {
                     statusContainer.classList.add('hidden');
