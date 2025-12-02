@@ -167,8 +167,8 @@
 
                         <div class="ml-7 pt-2">
                             <label class="block text-xs text-gray-500 mb-1">色の許容範囲(あいまいさ): <span
-                                    id="toleranceVal">20</span></label>
-                            <input type="range" id="toleranceRange" min="5" max="70" value="20"
+                                    id="toleranceVal">70</span></label>
+                            <input type="range" id="toleranceRange" min="5" max="99" value="70"
                                 class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
                         </div>
 
@@ -422,6 +422,16 @@
                                 <span class="text-xs font-bold">復元 (戻す)</span>
                             </label>
                         </div>
+                    </div>
+
+                    <!-- Magic Wand Settings (only visible when magic wand tool is selected) -->
+                    <div id="magicWandPanel" class="bg-gray-50 p-2 lg:p-3 rounded hidden">
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="text-xs font-bold text-gray-700">許容範囲</label>
+                            <span class="text-xs text-gray-500"><span id="detailToleranceVal">70</span></span>
+                        </div>
+                        <input type="range" id="detailToleranceRange" min="5" max="99" value="70"
+                            class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
                     </div>
 
                     <!-- Position Controls (only visible when move tool is selected) -->
@@ -679,6 +689,9 @@
         const brushModePanel = document.getElementById('brushModePanel');
         const brushSizeSlider = document.getElementById('brushSizeSlider');
         const brushSizeVal = document.getElementById('brushSizeVal');
+        const magicWandPanel = document.getElementById('magicWandPanel');
+        const detailToleranceRange = document.getElementById('detailToleranceRange');
+        const detailToleranceVal = document.getElementById('detailToleranceVal');
         const positionPanel = document.getElementById('positionPanel');
         const posXDisplay = document.getElementById('posX');
         const posYDisplay = document.getElementById('posY');
@@ -738,7 +751,26 @@
                 toleranceChanged = true;
                 updateButtons();
             }
+            // Sync detail slider
+            if (detailToleranceRange) {
+                detailToleranceRange.value = e.target.value;
+                if (detailToleranceVal) detailToleranceVal.innerText = e.target.value;
+            }
         });
+
+        // Detail Tolerance Slider Sync
+        if (detailToleranceRange) {
+            detailToleranceRange.addEventListener('input', (e) => {
+                const val = e.target.value;
+                if (detailToleranceVal) detailToleranceVal.innerText = val;
+
+                // Sync global slider
+                if (toleranceRange) {
+                    toleranceRange.value = val;
+                    toleranceVal.innerText = val;
+                }
+            });
+        }
         autoRemoveBgCheckbox.addEventListener('change', applyAutoRemoval);
         undoBtn.addEventListener('click', undo);
 
@@ -1734,6 +1766,7 @@
                 toolMagicWandBtn.classList.add('border-gray-300');
                 brushSizePanel.classList.add('hidden');
                 brushModePanel.classList.add('hidden');
+                magicWandPanel.classList.add('hidden');
                 positionPanel.classList.remove('hidden');
                 detailCanvas.style.cursor = 'move';
             } else if (currentTool === 'brush') {
@@ -1745,6 +1778,8 @@
                 toolMagicWandBtn.classList.add('border-gray-300');
                 brushSizePanel.classList.remove('hidden');
                 brushModePanel.classList.remove('hidden');
+                magicWandPanel.classList.add('hidden');
+                positionPanel.classList.add('hidden');
                 positionPanel.classList.add('hidden');
                 updateBrushCursor();
             } else if (currentTool === 'magicWand') {
@@ -1756,6 +1791,7 @@
                 toolMoveBtn.classList.add('border-gray-300');
                 brushSizePanel.classList.add('hidden');
                 brushModePanel.classList.add('hidden');
+                magicWandPanel.classList.remove('hidden');
                 positionPanel.classList.add('hidden');
                 detailCanvas.style.cursor = 'crosshair';
             }
@@ -1936,7 +1972,7 @@
 
         function updateBrushCursor() {
             // Create dynamic circular cursor based on brush size
-            const size = Math.max(16, Math.min(brushSize * 2, 64)); // Clamp size for visibility
+            const size = brushSize * 2; // Diameter = Radius * 2
             const cursorSvg = `data:image/svg+xml,${encodeURIComponent(
                 `<svg xmlns='http://www.w3.org/2000/svg' width='${size}' height='${size}' viewBox='0 0 ${size} ${size}'><circle cx='${size / 2}' cy='${size / 2}' r='${size / 2 - 1}' stroke='black' stroke-width='2' fill='none'/><circle cx='${size / 2}' cy='${size / 2}' r='${size / 2 - 1}' stroke='white' stroke-width='1' fill='none'/></svg>`
             )}`;
@@ -2196,11 +2232,19 @@
             const imageData = detailCtx.getImageData(0, 0, detailCanvas.width, detailCanvas.height);
             const data = imageData.data;
 
+            // Calculate effective brush size based on zoom
+            // Use getBoundingClientRect to get the actual visual scale, ensuring it matches what the user sees
+            const rect = detailCanvas.getBoundingClientRect();
+            const visualScale = rect.width / detailCanvas.width;
+
+            // Ensure at least 0.5px radius to paint something
+            const effectiveSize = Math.max(0.5, brushSize / visualScale);
+
             // Circular brush
-            for (let dy = -brushSize; dy <= brushSize; dy++) {
-                for (let dx = -brushSize; dx <= brushSize; dx++) {
+            for (let dy = -Math.ceil(effectiveSize); dy <= Math.ceil(effectiveSize); dy++) {
+                for (let dx = -Math.ceil(effectiveSize); dx <= Math.ceil(effectiveSize); dx++) {
                     const dist = Math.sqrt(dx * dx + dy * dy);
-                    if (dist > brushSize) continue;
+                    if (dist > effectiveSize) continue;
 
                     const px = Math.floor(x + dx);
                     const py = Math.floor(y + dy);
