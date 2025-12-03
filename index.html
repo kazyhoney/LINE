@@ -1021,6 +1021,22 @@
 
         function updateGrid() {
             if (!originalImage) return;
+
+            // Reset cell editor states as grid has changed
+            cellEditorStates = {};
+            currentEditingIndex = -1;
+
+            // Close detail editor if open (Manually to avoid recursion via closeDetailEditor -> updateGrid)
+            if (!detailEditor.classList.contains('hidden')) {
+                detailEditor.classList.add('hidden');
+                const detailDivider = document.getElementById('detailDivider');
+                if (detailDivider) detailDivider.classList.add('hidden');
+                detailEditorIndex.innerText = '';
+            }
+
+            // Re-apply auto removal to ensure consistent state
+            applyAutoRemoval();
+
             updateGridUI();
             updateSelectOptions();
         }
